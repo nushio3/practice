@@ -13,7 +13,7 @@ name:                Fib
 version:             0.1.0.0
 
 -- A short (one-line) description of the package.
-synopsis:            BDD Test
+synopsis:            BDD test
 
 -- A longer description of the package.
 -- description:         
@@ -42,13 +42,13 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 
-library
-  -- Modules exported by the library.
-  exposed-modules:     Fib
+executable Fib
+  -- .hs or .lhs file containing the Main module.
+  main-is:             Main.hs
   
-  -- Modules included in this library but not exported.
+  -- Modules included in this executable, other than Main.
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
-  build-depends:       base ==4.5.*
+  build-depends:       base ==4.5.*, doctest>=0.7, hspec>=1.2, primes>=0.2
   
