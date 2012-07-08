@@ -51,10 +51,13 @@ public class Game extends Thread{
         
             while(gameover==false){
                 count++;
-                // draw pattern
+                // draw the ball and rackets in background
                 patternBg = pos ^ racket0  ^ racket1;
+		// draw the ball trajectory by faded lights
+		// a faded light is implemented as rapidly blinking light
                 if ((count & 1792) == 0) { patternBg = patternBg ^ pos1; }
                 if ((count & 1920) == 0) { patternBg = patternBg ^ pos2; }
+		// acturally draw the pattern
                 pattern = patternBg;
                 // players can move the racket
                 if(button.pSW1 == false) { racket0 = 4; }
@@ -77,6 +80,8 @@ public class Game extends Thread{
                     pos = pos/2;
                     cmax = cmax * 15 / 16;
                 }
+
+		// time to move the ball
                 if(count > cmax){
                     count = 0;
                     //// the ball deccelerates a little when crossing the border.
@@ -84,8 +89,11 @@ public class Game extends Thread{
                     //    cmax = cmax * 65 / 64;
                     //}
 
+		    // move the ball and the trajectories
                     if(vel>0){ pos2=pos1; pos1=pos; pos = pos * 4; }
                     if(vel<0){ pos2=pos1; pos1=pos; pos = pos / 4; }
+
+		    // when the ball is out the game is over
                     if(pos < 1){ 
                         pos = 1;
                         score1 += 1;
@@ -98,23 +106,29 @@ public class Game extends Thread{
                     }
 
                 }
-            } // game running loop
+            } // end of game running loop
 
             count = 16 * 1048576;
-            pos1 = 32;
+            pos1 = 1;
             while (gameover == true) {
                 count--;
+                if(count < 0) {gameover = false;}
+
+		// draw the ball and rackets
                 patternBg = pos ^ racket0  ^ racket1;
+		// draw some congraturating patterns
                 patternBg = patternBg ^ (pos1 * 4369 * 32);
                 pattern = patternBg;
-                if(count < 0) {gameover = false;}
+
+		// rapidly circulate the congraturating patterns
                 if((count&131071)==0) {
                     if(vel > 0) {pos1*=2;}
                     if(vel < 0) {pos1/=2;}
                     if(pos1 < 1){pos1 = 8;}
                     if(pos1 > 8){pos1 = 1;}
                 }
-            }
+            } // end of gameover loop
+
             // change the velocity so that
 	    // previous loser serves the ball
             vel = (-1)*vel;
