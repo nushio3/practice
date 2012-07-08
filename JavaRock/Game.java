@@ -34,7 +34,9 @@ public class Game extends Thread{
         gameover = false;
         while(true){
             
-            // initialize game
+            // initialize game.
+	    // the previous loser serves the ball and
+	    // is given the automatically accelerating racket.
             if (vel == 1) { 
                 pos = 1; 
                 mask = 1365;
@@ -113,7 +115,8 @@ public class Game extends Thread{
                     if(pos1 > 8){pos1 = 1;}
                 }
             }
-            //change the velocity
+            // change the velocity so that
+	    // previous loser serves the ball
             vel = (-1)*vel;
         }
     }
