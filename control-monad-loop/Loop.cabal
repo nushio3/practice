@@ -17,4 +17,4 @@ cabal-version:       >=1.8
 executable Loop
   main-is:             MyFirstLoop.lhs
   -- other-modules:       
-  build-depends:       base ==4.5.*, control-monad-loop >= 0.1
+  build-depends:       base ==4.5.*, control-monad-loop >= 0.1, transformers>=0.3
