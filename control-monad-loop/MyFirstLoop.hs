@@ -31,13 +31,26 @@ xs = [0..]
 -- | This is main.
 -- let us see how it works.
 --
--- >>> main
+-- >>> main1
 -- 0123456789
 --
-main :: IO ()
-main = do
+main1 :: IO ()
+main1 = do
   foreach xs $ \i-> do
     liftIO $ putStr $ show i
     when (i >= 9) exit
+
+-- | This is main.
+-- let us see how it works.
+--
+-- >>> main
+-- (0,0)(0,1)(0,2)(0,3)(0,4)(0,5)(1,0)(1,1)(1,2)
+--
+main :: IO ()
+main = do
+  foreach [0..5] $ \i-> do
+    foreach [0..5] $ \j-> do
+    liftIO $ putStr $ show (i,j)
+    when ((i,j)==(1,2)) $ lift exit
 
 
