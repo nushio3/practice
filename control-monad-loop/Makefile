@@ -1,4 +1,9 @@
-cabal configure
-cabal install --only-dependencies
-doctest MyFirstLoop.lhs
-haddock -h MyFirstLoop.lhs -o doc/
+all:
+	cabal build
+	doctest MyFirstLoop.hs
+	cabal hscolour --executables
+	cabal haddock --executables '--haddock-options=--source-base=src/ --source-module=src/%{MODULE/./-}.html --source-entity=src/%{MODULE/./-}.html#%N' 
+
+configure:
+	cabal configure
+	cabal install --only-dependencies
