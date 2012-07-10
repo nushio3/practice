@@ -1,8 +1,15 @@
 {-# OPTIONS -Wall #-}
+
 module MyFirstLoop where
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Loop
+
+-- import Control.Monad.Trans.Class    (MonadTrans(lift))
+-- instance MonadTrans (LoopT c e) where
+--     lift m = LoopT $ \_ _ cont -> m >>= cont
+-- instance MonadIO m => MonadIO (LoopT c e m) where
+--     liftIO = lift . liftIO
 
 
 -- *introduction 
@@ -21,7 +28,12 @@ xs :: [Int]
 xs = [0..]
 
 
--- | This is main
+-- | This is main.
+-- let us see how it works.
+--
+-- >>> main
+-- 0123456789
+--
 main :: IO ()
 main = do
   foreach xs $ \i-> do

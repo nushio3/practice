@@ -17,10 +17,10 @@ cabal-version:       >=1.8
 executable Loop
   main-is:             MyFirstLoop.hs
   -- other-modules:       
-  build-depends:       base ==4.5.*, control-monad-loop >= 0.1, transformers
+  build-depends:       base, control-monad-loop >= 0.1, transformers
 
 test-suite doctests
   type:          exitcode-stdio-1.0
   ghc-options:   -threaded
-  main-is:       TestMain.hs
-  build-depends: base, doctest >= 0.7, test-framework-th-prime, test-framework-doctest
+  main-is:       doctests.hs
+  build-depends: base, doctest, test-framework-th-prime, test-framework-doctest >= 0.2.1.2

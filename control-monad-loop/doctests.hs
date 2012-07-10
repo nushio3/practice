@@ -1,5 +1,4 @@
-module Main where
-
+{-# LANGUAGE QuasiQuotes, TemplateHaskell #-}
 import Test.Framework.TH.Prime
 import Test.Framework.Providers.DocTest
 
