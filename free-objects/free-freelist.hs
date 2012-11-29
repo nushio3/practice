@@ -1,12 +1,12 @@
 import Control.Monad.Free
 import Data.Vector as V
 
-data A a = A a deriving (Eq, Show)
+data Cons b a = Cons b a deriving (Eq, Show)
 
-xs, ys, zs :: Free A Int
-xs = Pure 1
-ys = Free (A (Pure 2))
-zs = Free (A (Free (A (Pure 3))))
+xs, ys, zs :: Free (Cons Int) String
+xs = Pure "Nil"
+ys = Free (Cons 1 (Pure "niru"))
+zs = Free (Cons 1 (Free (Cons 2 (Free (Cons 3 (Pure "end"))))))
 
 main = do
   print $ xs
