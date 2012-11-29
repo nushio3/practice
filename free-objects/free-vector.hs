@@ -9,7 +9,8 @@ ys = Pure 2
 zs = do
   x <- xs
   y <- ys
-  return $ 10 * x + y
+  z <- return $ 10 * x + y
+  return $ z*z
 
 main = do
   print zs

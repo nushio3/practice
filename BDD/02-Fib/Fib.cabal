@@ -50,5 +50,5 @@ executable Fib
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
-  build-depends:       base ==4.5.*, doctest>=0.7, hspec>=1.2, primes>=0.2
+  build-depends:       base ==4.5.*, doctest==0.6.0, hspec>=1.2, primes>=0.2
   

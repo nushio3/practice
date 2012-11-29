@@ -8,7 +8,11 @@ instance Functor (R.Array R.D R.DIM1) where
   fmap = R.map
 
 xs, ys, zs :: Free (R.Array R.D R.DIM1) Int
-xs = liftF $  $ R.fromListUnboxed (R.ix1 10) [1..10]
+xs = liftF $ R.delay $ R.fromListUnboxed (R.ix1 10) [1..10]
+
+extract :: (Functor f) => Free f a -> f a
+extract (Free xs) = fmap (\(Pure x) -> x) xs
+extract _ = undefined
 
 ys = Pure 2
 
@@ -18,4 +22,5 @@ zs = do
   return $ 10 * x + y
 
 main = do
-  print =<< (R.computeP $ retract zs)
+  rzs <- R.computeUnboxedP $ extract zs
+  print $ R.toList rzs

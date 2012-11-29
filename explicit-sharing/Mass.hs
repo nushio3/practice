@@ -111,3 +111,4 @@ memoKey key a = do
 runShare :: Monad m => StateT FirstClassStore m a -> m a
 runShare m = evalStateT m emptyStore
 
+
