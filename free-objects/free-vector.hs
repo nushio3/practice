@@ -1,16 +1,19 @@
 import Control.Monad.Free
 import Data.Vector as V
 
-xs, ys, zs :: Free Vector Int
-xs = liftF $ fromList [1..10]
+ps, xs, ys, zs :: Free Vector Int
 
-ys = Pure 2
+ps = Pure 3
+
+xs = liftF $ fromList [1..10]
+ys = liftF $ fromList [0..9]
 
 zs = do
   x <- xs
   y <- ys
-  z <- return $ 10 * x + y
-  return $ z*z
+  p <- ps
+  z <- return $ 1000 * x + y^p
+  return $ z
 
 main = do
-  print zs
+  print $ retract zs
