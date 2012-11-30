@@ -22,3 +22,6 @@ ys = [1..10]
 
 main = print $ (go xs (show) :: [String])
 
+--               f b -> (b -> a) -> f a
+--        f c -> f b -> (c -> b -> a) -> f a
+-- f d -> f c -> f b -> (d ->c -> b -> a) -> f a
