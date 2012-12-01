@@ -6,6 +6,7 @@
 
 import qualified Data.Vector as V
 
+-- type level, first-in first-out list.
 class FIFO v a xS yS | v a xS -> yS where
   insert :: v a -> xS -> yS
 
