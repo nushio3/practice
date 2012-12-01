@@ -57,16 +57,16 @@ f_id_d n d = d^n
 
 -- | perfom functional applications inside the container,
 --   as many time as possible, and return the results.
-class Reduce v f vxS r vyS | v f vxS -> r vyS where
-  reduce :: v f -> vxS -> (v r, vyS)
+class Reduce v f vxS result vyS | v f vxS -> result vyS where
+  reduce :: v f -> vxS -> (v result, vyS)
  
 instance (Functor v) => Reduce v f (Nil v) f (Nil v) where
   reduce vf Nil = (vf, Nil)
 
-instance (Zip v, Reduce v f vxS r vyS) => Reduce v (a->f) (Cons v (v a)  vxS) r vyS where
+instance (Zip v, Reduce v f vxS result vyS) => Reduce v (a->f) (Cons v (v a)  vxS) result vyS where
   reduce vf (Cons va vxS) = reduce (zipWith ($) vf va) vxS
 
-reduceFinal :: Reduce v f vxS r (Nil v) => v f -> vxS -> v r
+reduceFinal :: Reduce v f vxS result (Nil v) => v f -> vxS -> v result
 reduceFinal vf vxS = vr where (vr, Nil) = reduce vf vxS
 
 
