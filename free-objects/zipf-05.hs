@@ -77,8 +77,8 @@ instance (Zip v, Reduce v f0 vaS r Nil) =>  PType (v i :| vaS) ((i -> f0)->v r) 
   spr (vi :| vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
 
 
-longflipZipWithN :: PType Nil r => r
-longflipZipWithN = spr Nil
+forZN :: PType Nil r => r
+forZN = spr Nil
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 Nil
@@ -93,18 +93,18 @@ fromList [1.1,1.4,1.9] :| (fromList "abc" :| (fromList [100,101,102] :| Nil))
 fromList ["1.1 a 100","1.4,b,101","1.9-c-102"]
 -}
 
-  print $ (longflipZipWithN vd1 vc1 vi1 f_dci_s :: V.Vector String)
+  print $ (forZN vd1 vc1 vi1 f_dci_s :: V.Vector String)
 {-
 fromList ["--- K 1.1 I a T 100 A ---","--- K 1.4 I b T 101 A ---","--- K 1.9 I c T 102 A ---"]
 -}
 
-  print $ (longflipZipWithN vi1 vd1 f_id_d      :: V.Vector Double)
+  print $ (forZN vi1 vd1 f_id_d      :: V.Vector Double)
 {-
 fromList [13780.612339822364,5.740260524389864e14,2.7093636335568943e28]
 -}
 
   putStrLn $ unlines $ V.toList $ 
-    longflipZipWithN vd1 vc1 vi1 $ 
+    forZN vd1 vc1 vi1 $ 
     \ d0 c0 i0 ->
       let msg :: String
           msg = printf "given %f %c %d. Their encode %f %f %f. Sum %f. Product %f."       
