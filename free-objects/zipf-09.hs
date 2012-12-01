@@ -1,0 +1,57 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+import qualified Data.Vector as V
+import           Data.Key (Zip(..))
+import           Prelude hiding (zipWith)
+import           Text.Printf
+
+instance Zip V.Vector where
+  zipWith = V.zipWith         
+
+
+-- type level, first-in first-out list, that contains only values of type (v a)
+-- we don't export this to avoid minimum confusion with the outer world.
+data Cons (v :: * -> *) a b = Cons a b deriving (Eq, Show)
+data Nil (v :: * -> *) = Nil           deriving (Eq, Show)
+
+
+-- | the type-class states that if you insert 
+--   (v a) into vxS, the resulting type is vyS
+class Insert v a vxS vyS | v a vxS -> vyS where
+  insert :: v a -> vxS -> vyS
+
+instance Insert v a (Nil v) (Cons v (v a) (Nil v)) where
+  insert va Nil = Cons va Nil
+
+instance  (Insert v a vxS vyS) => Insert v a (Cons v (v x) vxS) (Cons v (v x) vyS) where
+  insert va (Cons vb vbS) = (Cons vb $ insert va vbS)
+
+vi1 :: V.Vector Int
+vi1 = V.fromList [100..102]
+
+vc1 :: V.Vector Char
+vc1 = V.fromList ['a'..'c']
+
+vd1 :: V.Vector Double
+vd1 = V.fromList [1.1, 1.4, 1.9]
+
+vf1 :: V.Vector (Double -> Char -> Int -> String)
+vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
+
+
+nilOf :: v a -> Nil v
+nilOf xs = Nil
+
+main = do
+  let args =  insert vd1 (Nil :: Nil V.Vector)
+
+  print $ args
+  print $ nilOf (vf1)
+  print $ nilOf ((*3))
