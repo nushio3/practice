@@ -45,9 +45,11 @@ vd1 = V.fromList [1.1, 1.4, 1.9]
 vf1 :: V.Vector (Double -> Char -> Int -> String)
 vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
 
-f1 :: (Double -> Char -> Int -> String)
-f1 = printf "--- K %f I %c T %d A ---"
+f_dci_s :: (Double -> Char -> Int -> String)
+f_dci_s = printf "--- K %f I %c T %d A ---"
 
+f_id_d :: (Int -> Double -> Double)
+f_id_d n d = d^n
 
 -- | perfom functional applications inside the container,
 --   as many time as possible, and return the results.
@@ -75,8 +77,12 @@ instance (Zip v, Reduce v f0 vaS r Nil) =>  PType (v i :| vaS) ((i -> f0)->v r) 
   spr (vi :| vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
 
 
+longflipZipWithN :: PType Nil r => r
+longflipZipWithN = spr Nil
+
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 Nil
   print $ args
   print $ (reduceFinal vf1 args)
-  print $ (spr Nil vd1 vc1 vi1 f1 :: V.Vector String)
+  print $ (longflipZipWithN vd1 vc1 vi1 f_dci_s :: V.Vector String)
+  print $ (longflipZipWithN vi1 vd1 f_id_d :: V.Vector Double)
