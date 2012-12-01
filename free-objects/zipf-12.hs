@@ -40,7 +40,7 @@ vi1 :: V.Vector Int
 vi1 = V.fromList [100..102]
 
 vc1 :: V.Vector Char
-vc1 = V.fromList ['a'..'c']
+vc1 = V.fromList ['X'..'Z']
 
 vd1 :: V.Vector Double
 vd1 = V.fromList [1.1, 1.4, 1.9]
@@ -49,7 +49,7 @@ vf1 :: V.Vector (Double -> Char -> Int -> String)
 vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
 
 f_dci_s :: (Double -> Char -> Int -> String)
-f_dci_s = printf "--- K %f I %c T %d A ---"
+f_dci_s = printf "%f %c %d"
 
 f_id_d :: (Int -> Double -> Double)
 f_id_d n d = d^n
@@ -100,6 +100,10 @@ main = do
 
   print $ args
 
-  print $ (reduceFinal vf1 args)
+  print $ reduceFinal vf1 args
 
-  print $ (forZN vd1 vc1 vi1 f_dci_s )
+  print $ forZN vd1 vc1 vi1 f_dci_s 
+
+  print $ forZN vd1 vd1 $ \x y -> (3::Double) * x * y
+
+  print $ forZN [1 .. 10::Int] ['a'..] $ \n c -> (replicate n c :: String)
