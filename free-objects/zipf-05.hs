@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -66,14 +67,16 @@ reduceFinal vf vxS = vr where (vr, Nil) = reduce vf vxS
 class PType a r where
   spr :: a -> r
 
-instance (PType (v b :| vaS) r) => PType vaS (v b->r) where
-  spr vaS = (\vb -> spr (vb :| vaS))
+
+instance (Insert v b vaS vyS, PType vyS r) => PType vaS (v b->r) where
+  spr vaS = (\vb -> spr (insert vb vaS))
 
 instance (Zip v, Reduce v f0 vaS r Nil) =>  PType (v i :| vaS) ((i -> f0)->v r) where
   spr (vi :| vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
+
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 Nil
   print $ args
   print $ (reduceFinal vf1 args)
-  print $ (spr vd1 vc1 vi1 f1 :: V.Vector String)
+  print $ (spr Nil vd1 vc1 vi1 f1 :: V.Vector String)
