@@ -27,11 +27,20 @@ data Nil = Nil       deriving (Eq, Show)
 class Insert v a vxS vyS | v a vxS -> vyS where
   insert :: v a -> vxS -> vyS
 
-instance Insert f a Nil (f a :| Nil) where
+class MadeOfAll (v :: * -> *) vxS where
+  -- no method for this class      
+
+instance Insert v a Nil (v a :| Nil) where
   insert va Nil = va :| Nil
 
-instance  (Insert f a vxS vyS) => Insert f a (vx :| vxS) (vx :| vyS) where
+instance  (Insert v a vxS vyS) => Insert v a (vx :| vxS) (vx :| vyS) where
   insert va (vb :| vbS) = (vb :| insert va vbS)
+
+instance MadeOfAll v (v a :| Nil) where
+  -- no method for this class      
+
+instance (MadeOfAll v vxS) => MadeOfAll v (v a :| vxS) where
+  -- no method for this class      
 
 vi1 :: V.Vector Int
 vi1 = V.fromList [100..102]
@@ -93,7 +102,7 @@ fromList [1.1,1.4,1.9] :| (fromList "abc" :| (fromList [100,101,102] :| Nil))
 fromList ["1.1 a 100","1.4,b,101","1.9-c-102"]
 -}
 
-  print $ (forZN vd1 vc1 vi1 f_dci_s :: V.Vector String)
+  print $ (forZN vd1 vc1 vi1 f_dci_s )
 {-
 fromList ["--- K 1.1 I a T 100 A ---","--- K 1.4 I b T 101 A ---","--- K 1.9 I c T 102 A ---"]
 -}
