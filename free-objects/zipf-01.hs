@@ -6,16 +6,19 @@
 
 import qualified Data.Vector as V
 
--- type level, first-in first-out list.
-class FIFO v a xS yS | v a xS -> yS where
-  insert :: v a -> xS -> yS
+-- xS and yS are type level, first-in first-out list.
 
-instance FIFO f a () (f a,()) where
+
+-- | the type-class states that if you insert 
+--   (v a) into vxS, the resulting type is vyS
+class Insert v a vxS vyS | v a vxS -> vyS where
+  insert :: v a -> vxS -> vyS
+
+instance Insert f a () (f a,()) where
   insert va () = (va, ())
 
-instance  (FIFO f a xS yS) => FIFO f a (x,xS) (x,yS) where
+instance  (Insert f a vxS vyS) => Insert f a (vx,vxS) (vx,vyS) where
   insert va (vb,vbS) = (vb, insert va vbS)
-
 
 vi1 :: V.Vector Int
 vi1 = V.fromList [100..102]
