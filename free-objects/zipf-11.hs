@@ -73,8 +73,12 @@ class PType a r where
   spr :: a -> r
 
 
-instance (Insert v b vaS vyS, PType vyS r) => PType vaS (v b->r) where
+instance (Insert v b (vaS v) vyS, PType vyS r) => PType (vaS v) (v b->r) where
   spr vaS = (\vb -> spr (insert vb vaS))
+
+instance (Insert v b (vaS v a2 b2) vyS, PType vyS r) => PType (vaS v a2 b2) (v b->r) where
+  spr vaS = (\vb -> spr (insert vb vaS))
+
 
 instance (Zip v, Reduce v f0 vaS r (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)->v r) where
   spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
