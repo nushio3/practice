@@ -103,3 +103,7 @@ main = do
   print $ reduceFinal vf1 args
 
   print $ forZN vd1 vc1 vi1 f_dci_s 
+
+  print $ forZN vd1 vd1 $ \x y -> (3::Double) * x * y
+
+  print $ forZN [1 .. 10::Int] ['a'..] $ \n c -> (replicate n c :: String)
