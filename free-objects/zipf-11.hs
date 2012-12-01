@@ -83,6 +83,9 @@ instance (Insert v b (vaS v a2 b2) vyS, PType vyS r) => PType (vaS v a2 b2) (v b
 instance (Zip v, Reduce v f0 vaS r (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)->v r) where
   spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
 
+instance (Zip v, Reduce v f0 vaS r (Nil v)) =>  PType (Cons v (v i)  vaS) ((i -> f0)-> r) where
+  spr = undefined
+
 
 
 -- forZN :: forall v r. PType (Nil v) r => r
@@ -99,5 +102,11 @@ main = do
 
   print $ (reduceFinal vf1 args)
 
-  print $ (forZN vd1 vc1 vi1 f_dci_s :: V.Vector String)
+  print $ (forZN vd1 vc1 vi1 f_dci_s   {-:: V.Vector String -})
 
+{-
+$ runhaskell -XIncoherentInstances zipf-11.hs
+Cons (fromList [1.1,1.4,1.9]) (Cons (fromList "abc") (Cons (fromList [100,101,102]) Nil))
+fromList ["1.1 a 100","1.4,b,101","1.9-c-102"]
+zipf-11.hs: Prelude.undefined
+-}
