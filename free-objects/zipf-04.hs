@@ -62,6 +62,9 @@ reduceFinal vf vxS = vr where (vr, Nil) = reduce vf vxS
 class PType a t where
   spr :: a -> t
 
+instance (PType (a :| b) r) => PType a (b->r) where
+  spr a0 = (\b0 -> spr (a0 :| b0))
+
 
 
 main = do
