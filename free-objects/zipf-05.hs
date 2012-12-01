@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -43,6 +44,9 @@ vd1 = V.fromList [1.1, 1.4, 1.9]
 vf1 :: V.Vector (Double -> Char -> Int -> String)
 vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
 
+f1 :: (Double -> Char -> Int -> String)
+f1 = printf "--- K %f I %c T %d A ---"
+
 
 -- | perfom functional applications inside the container,
 --   as many time as possible, and return the results.
@@ -59,15 +63,17 @@ reduceFinal :: Reduce v f vxS r Nil => v f -> vxS -> v r
 reduceFinal vf vxS = vr where (vr, Nil) = reduce vf vxS
 
 
-class PType a t where
-  spr :: a -> t
+class PType a r where
+  spr :: a -> r
 
-instance (PType (a :| b) r) => PType a (b->r) where
-  spr a0 = (\b0 -> spr (a0 :| b0))
+instance (PType (v b :| vaS) r) => PType vaS (v b->r) where
+  spr vaS = (\vb -> spr (vb :| vaS))
 
-
+instance (Zip v, Reduce v f0 vaS r Nil) =>  PType (v i :| vaS) ((i -> f0)->v r) where
+  spr (vi :| vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 Nil
   print $ args
   print $ (reduceFinal vf1 args)
+  print $ (spr vd1 vc1 vi1 f1 :: V.Vector String)
