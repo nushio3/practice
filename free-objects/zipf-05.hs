@@ -85,4 +85,16 @@ main = do
   print $ args
   print $ (reduceFinal vf1 args)
   print $ (longflipZipWithN vd1 vc1 vi1 f_dci_s :: V.Vector String)
-  print $ (longflipZipWithN vi1 vd1 f_id_d :: V.Vector Double)
+  print $ (longflipZipWithN vi1 vd1 f_id_d      :: V.Vector Double)
+  putStrLn $ unlines $ V.toList $ 
+    longflipZipWithN vd1 vc1 vi1 $ 
+    \ d0 c0 i0 ->
+      let msg :: String
+          msg = printf "given %f %c %d. Their encode %f %f %f. Sum %f. Product %f."       
+                              d0 c0 i0               d0 c1 i1      s0          p0 
+          c1, i1 :: Double
+          c1 = fromIntegral $ length ['A'..c0]
+          i1 = fromIntegral (i0 :: Int)
+          s0 = sum [d0,c1,i1] 
+          p0 = product [d0,c1,i1]
+      in msg
