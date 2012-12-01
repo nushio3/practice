@@ -21,7 +21,7 @@ instance Zip V.Vector where
 -- type level, first-in first-out list, that contains only values of type (v a)
 -- we don't export this to avoid minimum confusion with the outer world.
 data Cons (v :: * -> *) a b = Cons a b deriving (Eq, Show)
-data Nil (v :: * -> *) = Nil           deriving (Eq, Show)
+data Nil  (v :: * -> *)     = Nil      deriving (Eq, Show)
 
 
 -- | the type-class states that if you insert 
