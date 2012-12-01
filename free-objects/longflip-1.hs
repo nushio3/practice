@@ -1,22 +1,20 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses#-}
 {-# LANGUAGE UndecidableInstances #-}
 
-run :: PType () t => t
-run = spr ()
+class Dual a b | a->b where
+  dual :: a -> b
 
-class PType a t where
-  spr :: a -> t
+instance Dual () (forall a. a->a) where
+  dual () = id
 
-instance PType a ((a->b)->b) where
-   spr x f = f x
-
-instance (PType (a->s) r) => PType s (a->r) where
-  spr s0 = (\a0 -> spr (a0,b0))
-
-
+main :: IO ()
 main = do
-  print "hi"
+  print "hx"
