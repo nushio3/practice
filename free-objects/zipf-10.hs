@@ -84,8 +84,9 @@ instance (Zip v, Reduce v f0 vaS r (Nil v)) =>  PType (Cons v (v i)  vaS) ((i ->
 -- forZN :: forall v r. PType (Nil v) r => r
 -- forZN = spr (Nil :: Nil v)
 
-forZN :: PType (Nil V.Vector) r => r
-forZN = spr (Nil :: Nil V.Vector)
+-- forZN :: PType (Nil V.Vector) (V.Vector Double -> r) => V.Vector Double -> r
+forZN :: PType (Cons V.Vector (V.Vector Double) (Nil V.Vector)) r=> V.Vector Double -> r
+forZN vx = spr (Cons vx (Nil :: Nil V.Vector) :: Cons V.Vector (V.Vector Double) (Nil V.Vector))
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 (Nil :: Nil V.Vector)
