@@ -102,11 +102,4 @@ main = do
 
   print $ (reduceFinal vf1 args)
 
---  print $ (forZN vd1 vc1 vi1 f_dci_s   {-:: V.Vector String -})
-
-{-
-$ runhaskell -XIncoherentInstances zipf-11.hs
-Cons (fromList [1.1,1.4,1.9]) (Cons (fromList "abc") (Cons (fromList [100,101,102]) Nil))
-fromList ["1.1 a 100","1.4,b,101","1.9-c-102"]
-zipf-11.hs: Prelude.undefined
--}
+  print $ (forZN vd1 vc1 vi1 f_dci_s )
