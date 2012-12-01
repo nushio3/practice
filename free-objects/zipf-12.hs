@@ -99,7 +99,10 @@ main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 (Nil :: Nil V.Vector)
 
   print $ args
+--  Cons (fromList [1.1,1.4,1.9]) (Cons (fromList "XYZ") (Cons (fromList [100,101,102]) Nil))
 
   print $ reduceFinal vf1 args
+--  fromList ["1.1 X 100","1.4,Y,101","1.9-Z-102"]
 
   print $ forZN vd1 vc1 vi1 f_dci_s 
+--  fromList ["(1.1){X}[100]","(1.4){Y}[101]","(1.9){Z}[102]"]
