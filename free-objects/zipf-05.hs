@@ -121,3 +121,4 @@ given 1.1 a 100. Their encode 1.1 33.0 100.0. Sum 134.1. Product 3630.0000000000
 given 1.4 b 101. Their encode 1.4 34.0 101.0. Sum 136.4. Product 4807.599999999999.
 given 1.9 c 102. Their encode 1.9 35.0 102.0. Sum 138.9. Product 6783.0.
 -}
+
