@@ -4,6 +4,8 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -78,19 +80,16 @@ instance (Zip v, Reduce v f0 vaS r (Nil v)) =>  PType (Cons v (v i)  vaS) ((i ->
   spr (Cons vi vaS) = (\f -> reduceFinal (fmap f vi) vaS)         
 
 
--- forZN :: PType Nil r => r
--- forZN = spr Nil
+
+forZN :: forall v r. PType (Nil v) r => r
+forZN = spr (Nil :: Nil v)
 
 main = do
   let args = insert vi1 $ insert vc1 $ insert vd1 (Nil :: Nil V.Vector)
 
   print $ args
-{- 
-fromList [1.1,1.4,1.9] :| (fromList "abc" :| (fromList [100,101,102] :| Nil))
--}
 
   print $ (reduceFinal vf1 args)
-{-
-fromList ["1.1 a 100","1.4,b,101","1.9-c-102"]
--}
+
+  print $ (forZN vd1 vc1 vi1 f_dci_s :: V.Vector String)
 
