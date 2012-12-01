@@ -22,25 +22,24 @@ data a :| b = a :| b deriving (Eq, Show)
 data Nil = Nil       deriving (Eq, Show)
 
 
+-- no method for this class      
+class AllMadeOf (v :: * -> *) vxS where
+instance AllMadeOf v Nil where
+instance (AllMadeOf v vxS) => AllMadeOf v (v a :| vxS) where
+
+
 -- | the type-class states that if you insert 
 --   (v a) into vxS, the resulting type is vyS
-class Insert v a vxS vyS | v a vxS -> vyS where
+class (AllMadeOf v vxS, AllMadeOf v vyS) => Insert v a vxS vyS | v a vxS -> vyS where
   insert :: v a -> vxS -> vyS
-
-class MadeOfAll (v :: * -> *) vxS where
-  -- no method for this class      
 
 instance Insert v a Nil (v a :| Nil) where
   insert va Nil = va :| Nil
 
-instance  (Insert v a vxS vyS) => Insert v a (vx :| vxS) (vx :| vyS) where
+instance  (AllMadeOf v (vx:|vxS), AllMadeOf v (vx:|vyS), Insert v a vxS vyS) => 
+  Insert v a (vx :| vxS) (vx :| vyS) where
   insert va (vb :| vbS) = (vb :| insert va vbS)
 
-instance MadeOfAll v (v a :| Nil) where
-  -- no method for this class      
-
-instance (MadeOfAll v vxS) => MadeOfAll v (v a :| vxS) where
-  -- no method for this class      
 
 vi1 :: V.Vector Int
 vi1 = V.fromList [100..102]
@@ -79,7 +78,7 @@ class PType a r where
   spr :: a -> r
 
 
-instance (Insert v b vaS vyS, PType vyS r) => PType vaS (v b->r) where
+instance (AllMadeOf v vaS,AllMadeOf v vyS, Insert v b vaS vyS, PType vyS r) => PType vaS (v b->r) where
   spr vaS = (\vb -> spr (insert vb vaS))
 
 instance (Zip v, Reduce v f0 vaS r Nil) =>  PType (v i :| vaS) ((i -> f0)->v r) where
