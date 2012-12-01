@@ -105,7 +105,7 @@ fromList [13780.612339822364,5.740260524389864e14,2.7093636335568943e28]
 
   putStrLn $ unlines $ V.toList $ 
     forZN vd1 vc1 vi1 $ 
-    \ d0 c0 i0 ->
+    \      d0  c0  i0 ->
       let msg :: String
           msg = printf "given %f %c %d. Their encode %f %f %f. Sum %f. Product %f."       
                               d0 c0 i0               d0 c1 i1      s0          p0 
