@@ -49,7 +49,7 @@ vf1 :: V.Vector (Double -> Char -> Int -> String)
 vf1 = V.fromList [printf "%f %c %d", printf "%f,%c,%d", printf "%f-%c-%d"]
 
 f_dci_s :: (Double -> Char -> Int -> String)
-f_dci_s = printf "%f %c %d"
+f_dci_s = printf "(%f){%c}[%d]"
 
 f_id_d :: (Int -> Double -> Double)
 f_id_d n d = d^n
