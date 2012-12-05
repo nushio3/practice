@@ -8,11 +8,12 @@ class PType t where
   spr :: [String] -> t
 
 instance PType String where
-  spr xs = unwords xs
+  spr xs = unwords $ reverse xs
 
 instance (Show a, PType r) => PType (a->r) where
   spr xs = (\x -> spr (show x:xs))
 
+printf' = printf
 
 main = do
-  putStrLn $ printf 1341 "PAD" 3.98
+  putStrLn $ printf' 0.1 "U" 178
