@@ -26,4 +26,5 @@ instance  forall m s. (Storable s, MV.Unbox s, Prim s, PrimMonad m) => Show (Row
 
 main :: IO ()
 main = do
-    print "Done"
+  xs <- MV.new 0
+  print $ (Row xs :: Row IO Int)
