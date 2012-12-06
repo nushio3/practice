@@ -1,5 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
-{-# LANGUAGE ExistentialQuantification, ScopedTypeVariables #-}
+-- works on ghc 7.6.1
 
 import Control.Monad (liftM2)
 import qualified Data.Vector.Unboxed as V
