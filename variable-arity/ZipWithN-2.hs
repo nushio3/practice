@@ -35,10 +35,6 @@
 module Data.List.ZipWithN (ZipWithN(), zipWithN) where
 
 import qualified Data.Key as K
-import qualified Data.Vector as V
-
-instance K.Zip V.Vector where
-  zipWith = V.zipWith
 
 
 -- TODO: add the extra hackery that lets us get rid of the fundeps,
@@ -75,6 +71,8 @@ instance (K.Zip f, ZipWithN f b gr kr) =>
 -- >>> zipWithN f [1 :: Int ..] "hoge" [1 :: Double ..] :: [String]
 -- ["h1 1.0","o2 2.0","g3 3.0","e4 4.0"]
 --
+-- >>> import qualified Data.Vector as V
+-- >>> instance K.Zip V.Vector where zipWith = V.zipWith
 -- >>> let xs = V.fromList [1..10] :: V.Vector Int
 -- >>> zipWithN (*) xs xs
 -- fromList [1,4,9,16,25,36,49,64,81,100]
