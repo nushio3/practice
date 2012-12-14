@@ -15,6 +15,14 @@ infinitePrimeTheorem =
       return $ ip &&& (p .>= n)
 
 
+infiniteEvenPrimeTheorem :: Predicate
+infiniteEvenPrimeTheorem =
+  forAll ["n"] $ \n ->
+    forSome ["p"] $ \p -> do
+      ip <- isPrime p
+      return $ ip &&& (p .>= n) &&& (p `sMod` 2 .== 0)
+
+
 main = do
   putStrLn "is there a prime larger than 100?"
   (print =<<) $ sat $ forSome ["p"] $ \p-> do
@@ -27,6 +35,9 @@ main = do
     constrain $ p `sMod` 2 .== 0
     isPrime p
 
+
+  putStrLn "are there infinite even primes?"
+  (print =<<) $ prove $ infiniteEvenPrimeTheorem
 
   putStrLn "are there infinite primes?"
   (print =<<) $ prove $ infinitePrimeTheorem
