@@ -48,9 +48,12 @@ costFunction :: SReal -> SReal -> SReal
 costFunction x p = p
 
 constraintPred :: SReal -> SReal -> Predicate
-constraintPred x p = return ( x .>= termSum 5 &&& p.>=0 &&& p^4/90 .>= x)
-  where
-    term :: SInteger -> SReal
-    term n = 1/ (toSReal $ n^4)
-    termSum :: SInteger -> SReal
-    termSum n = ite (n .<= 0) 0 (termSum (n-1) + term n)
+constraintPred x p = do
+  constrain $ p.>=0
+  constrain $ p^4/90 .>= x
+  forAll ["n"] $ \n -> termSum n .<= x
+    where
+      term :: SInteger -> SReal
+      term n = 1/ (toSReal $ n^4)
+      termSum :: SInteger -> SReal
+      termSum n = ite (n .<= 0) 0 (termSum (n-1) + term n)
