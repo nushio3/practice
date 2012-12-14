@@ -11,16 +11,22 @@ infinitePrimeTheorem :: Predicate
 infinitePrimeTheorem =
   forAll ["n"] $ \n ->
     forSome ["p"] $ \p -> do
-      constrain $ p .>= n
-      isPrime p
+      ip <- isPrime p
+      return $ ip &&& (p .>= n)
 
 
 main = do
-  (print =<<) $ prove $ isPrime 2
-  (print =<<) $ prove $ isPrime 3
-  (print =<<) $ prove $ isPrime 4
-  (print =<<) $ prove $ isPrime 5
-  (print =<<) $ prove $ isPrime 6
+  putStrLn "is there a prime larger than 100?"
+  (print =<<) $ sat $ forSome ["p"] $ \p-> do
+    constrain $ p .>= 100
+    isPrime p
+
+  putStrLn "is there an even prime larger than 100?"
+  (print =<<) $ sat $ forSome ["p"] $ \p-> do
+    constrain $ p .>= 100
+    constrain $ p `sMod` 2 .== 0
+    isPrime p
+
 
   putStrLn "are there infinite primes?"
   (print =<<) $ prove $ infinitePrimeTheorem
