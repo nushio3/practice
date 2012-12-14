@@ -22,16 +22,20 @@ infiniteEvenPrimeTheorem =
       ip <- isPrime p
       return $ ip &&& (p .>= n) &&& (p `sMod` 2 .== 0)
 
+eulerLucky :: SInteger -> Predicate
+eulerLucky a = forAll ["n"] $ \n -> do
+  constrain $ (0 .<= n &&& n .<= a-2)
+  isPrime $ n^2+n+a
 
 main = do
   putStrLn "is there a prime larger than 100?"
   (print =<<) $ sat $ forSome ["p"] $ \p-> do
-    constrain $ p .>= 100
+    constrain $ p .> 100
     isPrime p
 
-  putStrLn "is there an even prime larger than 100?"
+  putStrLn "is there an even prime larger than 2?"
   (print =<<) $ sat $ forSome ["p"] $ \p-> do
-    constrain $ p .>= 100
+    constrain $ p .> 2
     constrain $ p `sMod` 2 .== 0
     isPrime p
 
