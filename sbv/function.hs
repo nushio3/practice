@@ -36,5 +36,5 @@ thmBad x y = f x y .== f y x
 
 
 main = do
-  prove $ thmGood
-  prove $ thmBad
+  print =<< prove thmGood
+  print =<< prove thmBad
