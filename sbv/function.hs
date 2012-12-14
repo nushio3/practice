@@ -4,9 +4,6 @@ import Data.SBV
 f :: SWord8 -> SWord8 -> SWord16
 f = uninterpret "f"
 
-fK :: SBV a -> SBV a -> SBV a
-fK x y = x
-
 
 -- | Asserts that @f x z == f (y+2) z@ whenever @x == y+2@. Naturally correct:
 --
