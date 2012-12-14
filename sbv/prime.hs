@@ -44,9 +44,5 @@ main = do
   (print =<<) $ prove $ infiniteEvenPrimeTheorem
 
   putStrLn "are there infinite primes?"
-  (print =<<) $ proveInf $ infinitePrimeTheorem
+  (print =<<) $ prove $ infinitePrimeTheorem
 
-
-proveInf = proveWith inf
-  where
-    inf = defaultSMTCfg{timeOut=Nothing}
