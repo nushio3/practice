@@ -12,7 +12,7 @@ infinitePrimeTheorem =
   forAll ["n"] $ \n ->
     forSome ["p"] $ \p -> do
       ip <- isPrime p
-      return $ ip &&& (p .>= n) &&& (p `sMod` 2 .== 0)
+      return $ ip &&& (p .>= n)
 
 
 main = do
