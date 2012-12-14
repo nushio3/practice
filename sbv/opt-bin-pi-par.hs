@@ -8,7 +8,7 @@ import Control.Concurrent.ParallelIO.Global (parallel)
 type Figure = SReal -> SReal -> SBool
 
 circle :: Figure
-circle x y = x^2 + y^2 .<= 1
+circle x y = x^8 + y^8 .<= 1
 
 data Rectangle = Rectangle
   { lef :: Rational, bot :: Rational, rig :: Rational, top :: Rational }
@@ -50,6 +50,7 @@ go fig lower upper rects = do
   printf "%f <= pi <= %f\n"
     (4*fromRational lower::Double)
     (4*fromRational upper::Double)
+  print $ (lower+upper)/2
   sols <- parallel $ flip map rects $ \rect -> do
     p1 <- isTheorem $ rect `isAllIn` fig
     p2 <- isTheorem $ rect `isAllOut` fig

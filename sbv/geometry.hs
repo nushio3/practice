@@ -6,7 +6,7 @@ main = do
   (print =<<) $ allSat $ do
     x <- exists "x"
     y <- exists "y"
-    constrain $ x^2 + y^2 .== (1::SReal)
+    constrain $ x^6 + y^6 .== (1::SReal)
     constrain $ 2*x+3*y   .== 1
     return (true :: SBool)
 

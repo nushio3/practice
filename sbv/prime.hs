@@ -28,9 +28,9 @@ eulerLucky a = forAll ["n"] $ \n -> do
   isPrime $ n^2+n+a
 
 main = do
-  putStrLn "is there a prime larger than 100?"
+  putStrLn "is there a prime larger than 100000?"
   (print =<<) $ sat $ forSome ["p"] $ \p-> do
-    constrain $ p .> 100
+    constrain $ p .> 100000
     isPrime p
 
   putStrLn "is there an even prime larger than 2?"
