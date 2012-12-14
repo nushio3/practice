@@ -1,13 +1,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import Control.Monad
 import Data.SBV
 
+exercise prob = do
+  print =<< prove prob          
+  print =<< sat prob          
+  putStrLn ""
+
 main = do
-   res <- prove $ forSome ["x"] $ \(x::SInteger) -> x * x .== 4
-   print res
-   res <- prove $ forSome ["x"] $ \(x::SReal) -> x * x .== 4
-   print res
-   res <- prove $ forSome ["x"] $ \(x::SInteger) -> x * x .== 2
-   print res
-   res <- prove $ forSome ["x"] $ \(x::SReal) -> x * x .== 2
-   print res
+  exercise $ forSome ["x"] $ \(x::SInteger) -> x * x .== 4
+  exercise $ forSome ["x"] $ \(x::SReal) -> x * x .== 4
+  exercise $ forSome ["x"] $ \(x::SInteger) -> x * x .== 2
+  exercise $ forSome ["x"] $ \(x::SReal) -> x * x .== 2
+
