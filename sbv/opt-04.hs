@@ -3,7 +3,7 @@
 import Data.SBV
 
 main = do
-  sol <- minimize (Iterative True) costFunction 3 constraintFunction
+  sol <- minimize Quantified costFunction 3 constraintFunction
   print sol
   where
     costFunction [x,y,z] = 42 * x + 10 * y + 8 * (z::SReal)
