@@ -24,9 +24,21 @@ main = do
                             .>= (r i + r j)^2
                | i <- [0..n-1], j <- [i+1..n-1]]
       return (true :: SBool)
-  tUpper <- unarySearch pred True 10
-  tLower <- unarySearch pred False (-1)
-  binarySearch pred tLower tUpper
+--   tUpper <- unarySearch pred True 10
+--   tLower <- unarySearch pred False (-1)
+--   binarySearch pred tLower tUpper
+  minimize (Iterative True) cost 7 valid
+    where
+      cost = head
+      valid [t,ax,ay,bx,by,cx,cy] = bAnd
+        [ t .>= (300::SInteger)
+        , (t-100)^2 .>= ax^2+ay^2
+        , (t-200)^2 .>= bx^2+by^2
+        , (t-300)^2 .>= cx^2+cy^2
+        , (ax-bx)^2+(ay-by)^2 .>= 300^2
+        , (ax-cx)^2+(ay-cy)^2 .>= 400^2
+        , (bx-cx)^2+(by-cy)^2 .>= 500^2
+          ]
 
 
 unarySearch :: (SInteger -> Predicate) -> Bool -> Integer -> IO Integer
