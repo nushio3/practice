@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include <windows.h>
 #include "SDL.h"
 #include "SDL_mouse.h"
@@ -14,32 +15,33 @@ double sampleFrequency = 0;
 unsigned int audioBufferSize = 0;
 unsigned int outputAudioBufferSize = 0;
 
-double freq1 = 1000;
-double fase1 = 0;
-double freq2 = 1001;
-double fase2 = 0;
+const int num_waves = 2;
+vector<double> freqs;
+vector<double> amps;
+vector<double> phases;
+
 
 int mouse_x,mouse_y;
 
+const double PI2 = 2*3.141592653;
 
 void example_mixaudio(void *unused, Uint8 *stream, int len) {
+  cerr << "called" << endl;
 
-  double bytesPerPeriod1 = sampleFrequency / freq1;
-  double bytesPerPeriod2 = sampleFrequency / freq2;
-
-  for (int i=0;i<len;i++) {
-    int channel1 = int(150*sin(fase1*6.28/bytesPerPeriod1));
-    int channel2 = int(150*sin(fase2*6.28/bytesPerPeriod2));
-
-    int outputValue = channel1 + channel2;           // just add the channels
+  for (int t=0;t<len;t++) {
+    double sum = 0;
+    for (int i = 0; i < num_waves; ++i) {
+      sum += amps[i]*sin(phases[i]);
+      phases[i] += freqs[i];
+      while(phases[i]> 2*PI2)phases[i] -= 2*PI2;
+    }
+    int outputValue = int(sum);
     if (outputValue > 127) outputValue = 127;        // and clip the result
     if (outputValue < -128) outputValue = -128;      // this seems a crude method, but works very well
 
-    stream[i] = outputValue;
-
-    fase1++;
-    fase2++;
+    stream[t] = int(outputValue);
   }
+
 }
 
 int main(int argc, char *argv[])
@@ -49,9 +51,12 @@ int main(int argc, char *argv[])
     cout << "Unable to init SDL: " << SDL_GetError() << endl;
     return 1;
   }
-
   /* setup audio */
   SDL_AudioSpec *desired, *obtained;
+  freqs.resize(num_waves);
+  amps.resize(num_waves);
+  phases.resize(num_waves);
+
 
   /* Allocate a desired SDL_AudioSpec */
   desired = (SDL_AudioSpec *) malloc(sizeof(SDL_AudioSpec));
@@ -79,6 +84,8 @@ int main(int argc, char *argv[])
 
   desired->channels = 1;
 
+
+
   /* Open the audio device and start playing sound! */
   if ( SDL_OpenAudio(desired, obtained) < 0 ) {
     fprintf(stderr, "AudioMixer, Unable to open audio: %s\n", SDL_GetError());
@@ -87,6 +94,8 @@ int main(int argc, char *argv[])
 
   audioBufferSize = obtained->samples;
   sampleFrequency = obtained->freq;
+
+
 
   /* if the format is 16 bit, two bytes are written for every sample */
   if (obtained->format==AUDIO_U16 || obtained->format==AUDIO_S16) {
@@ -101,6 +110,15 @@ int main(int argc, char *argv[])
   SDL_PauseAudio(0);
 
   bool running = true;
+
+  // initiate wave banks
+  for (int i = 0; i < num_waves; ++i) {
+    double f = 800 + 0.3*double(i);
+    freqs[i] = (6.28 * f / sampleFrequency);
+    amps[i]  = 60;
+    phases[i] = 3.14*i;
+  }
+
 
   SDL_Event event;
   while (running) {
