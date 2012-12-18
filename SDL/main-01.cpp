@@ -122,8 +122,9 @@ int main(int argc, char *argv[])
       SDL_Delay(1);
       {
 	SDL_GetMouseState(&mouse_x, &mouse_y);
+	int k = GetAsyncKeyState(65);
 	ostringstream ostr;
-	ostr << mouse_x << " " << mouse_y ;
+	ostr << mouse_x << " " << mouse_y  << " " << k;
 	SDL_WM_SetCaption(ostr.str().c_str(),0);	
 	  
       }
