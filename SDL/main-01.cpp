@@ -1,6 +1,9 @@
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <windows.h>
 #include "SDL.h"
+#include "SDL_mouse.h"
 #include "SDL_main.h"
 
 /* linker options: -lmingw32 -lSDLmain -lSDL -mwindows */
@@ -15,6 +18,9 @@ double freq1 = 1000;
 double fase1 = 0;
 double freq2 = 1001;
 double fase2 = 0;
+
+int mouse_x,mouse_y;
+
 
 void example_mixaudio(void *unused, Uint8 *stream, int len) {
 
@@ -114,6 +120,13 @@ int main(int argc, char *argv[])
 	break;
       }
       SDL_Delay(1);
+      {
+	SDL_GetMouseState(&mouse_x, &mouse_y);
+	ostringstream ostr;
+	ostr << mouse_x << " " << mouse_y ;
+	SDL_WM_SetCaption(ostr.str().c_str(),0);	
+	  
+      }
     }
     SDL_Delay(1);
   }
