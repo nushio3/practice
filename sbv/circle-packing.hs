@@ -48,7 +48,7 @@ binarySearch pred tLower tUpper = do
            ++ show tMid
            ++ " : " ++ show res
   case ans of
-    _ | (tUpper==tLower) -> quit
+    _ | (tUpper<=tLower+1) -> quit
     Satisfiable _ _ -> binarySearch pred tLower tMid
     Unsatisfiable _ -> binarySearch pred tMid tUpper
     _               -> quit
