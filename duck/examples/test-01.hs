@@ -1,6 +1,4 @@
-
-
-import Duck
+import qualified Data.DuckTyped as Object
 
 main = do
-  print "hi"
+  print Object.empty

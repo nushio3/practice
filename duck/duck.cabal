@@ -17,7 +17,8 @@ cabal-version:       >=1.8
 library
   exposed-modules:     
     Data.DuckTyped
-    Data.DuckTyped.Example.Test01
   -- other-modules:       
   build-depends:       base ==4.6.*
+                     , containers >= 0.5
+                     , lens >= 3.7.1.2
                      , unittyped == 0.1
