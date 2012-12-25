@@ -15,6 +15,9 @@ build-type:          Simple
 cabal-version:       >=1.8
 
 library
-  -- exposed-modules:     
+  exposed-modules:     
+    Data.DuckTyped
+    Data.DuckTyped.Example.Test01
   -- other-modules:       
   build-depends:       base ==4.6.*
+                     , unittyped == 0.1
