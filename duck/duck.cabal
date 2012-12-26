@@ -17,6 +17,7 @@ cabal-version:       >=1.8
 library
   exposed-modules:     
     Data.DuckTyped
+    Data.DuckTyped.Flying
   -- other-modules:       
   build-depends:       base ==4.6.*
                      , containers >= 0.5
@@ -28,3 +29,4 @@ executable test-01
   main-is: test-01.hs
   build-depends:       base ==4.6.*
                      , duck
+                     , lens >= 3.7.1.2
