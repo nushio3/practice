@@ -16,8 +16,9 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:     
-    Data.DuckTyped
-    Data.DuckTyped.Flying
+    Data.Object
+    Data.Object.Flying
+    Data.Object.Wav
   -- other-modules:       
   build-depends:       base ==4.6.*
                      , containers >= 0.5

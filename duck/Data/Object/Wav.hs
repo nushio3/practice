@@ -2,10 +2,10 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | Keys for wave files.
 
-module Data.DuckTyped.Wav (sound) where
+module Data.Object.Wav (sound) where
 
 import           Data.Dynamic
-import           Data.DuckTyped
+import           Data.Object
 import qualified Data.Vector as V
 import           Data.Int
 
