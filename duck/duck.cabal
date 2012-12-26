@@ -22,3 +22,9 @@ library
                      , containers >= 0.5
                      , lens >= 3.7.1.2
                      , unittyped == 0.1
+
+executable test-01
+  hs-source-dirs:      examples           
+  main-is: test-01.hs
+  build-depends:       base ==4.6.*
+                     , duck
