@@ -23,6 +23,7 @@ library
                      , containers >= 0.5
                      , lens >= 3.7.1.2
                      , unittyped == 0.1
+                     , vector >= 0.10
 
 executable test-01
   hs-source-dirs:      examples           
@@ -30,3 +31,4 @@ executable test-01
   build-depends:       base ==4.6.*
                      , duck
                      , lens >= 3.7.1.2
+                     , vector >= 0.10
