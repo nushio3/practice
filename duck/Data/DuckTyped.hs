@@ -15,17 +15,18 @@ newtype Object = Object (Map.Map TypeRep Dynamic)
 class Typeable a => KeyType a where
   type ValType a :: *
 
-type Record kt = Lens Object Object (Maybe (ValType kt)) (ValType kt)
+type Record kt = Lens Object Object (Maybe (ValType kt)) (Maybe (ValType kt))
 
 empty :: Object
 empty = Object $ Map.empty
 
 mkRecord :: forall kt. (KeyType kt, Typeable (ValType kt)) => kt -> Record kt
-mkRecord k1 = lens getr setr
+mkRecord k1 = lens gettr settr
   where
-    getr :: Object -> Maybe (ValType kt)
-    getr (Object map0) = Map.lookup k map0 >>= fromDynamic
-    setr :: Object -> (ValType kt) -> Object
-    setr (Object map0) x = Object $ Map.insert k (toDyn x) map0 
+    gettr :: Object -> Maybe (ValType kt)
+    gettr (Object map0) = Map.lookup k map0 >>= fromDynamic
+    settr :: Object -> (Maybe (ValType kt)) -> Object
+    settr (Object map0) Nothing  = Object $ Map.delete k map0 
+    settr (Object map0) (Just x) = Object $ Map.insert k (toDyn x) map0 
     k :: TypeRep
     k = typeOf k1
