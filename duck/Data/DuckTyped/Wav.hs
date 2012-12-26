@@ -7,7 +7,7 @@ module Data.DuckTyped.Wav (sound) where
 import           Data.Dynamic
 import           Data.DuckTyped
 import qualified Data.Vector as V
-
+import           Data.Int
 
 
 
