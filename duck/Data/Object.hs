@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeFamilies #-}
-module Data.DuckTyped where
+module Data.Object where
 
 import qualified Data.Map as Map
 import           Data.Dynamic
@@ -26,7 +26,7 @@ mkRecord k1 = lens gettr settr
     gettr :: Object -> Maybe (ValType kt)
     gettr (Object map0) = Map.lookup k map0 >>= fromDynamic
     settr :: Object -> (Maybe (ValType kt)) -> Object
-    settr (Object map0) Nothing  = Object $ Map.delete k map0 
-    settr (Object map0) (Just x) = Object $ Map.insert k (toDyn x) map0 
+    settr (Object map0) Nothing  = Object $ Map.delete k map0
+    settr (Object map0) (Just x) = Object $ Map.insert k (toDyn x) map0
     k :: TypeRep
     k = typeOf k1
