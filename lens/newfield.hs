@@ -25,6 +25,15 @@ z = e & over olens (*2)
 
 
 main = do
+  print $ view olens (set olens 23 e) == 23
+  print $ view olens (set olens 23 x) == 23
+  print $ set olens (view olens x) x == x
+  print $ set olens (view olens e) e == e -- lens law is violated here!
+  print $ set olens 45 (set olens 23 e) == set olens 45 e
+  print $ set olens 78 (set olens 94 x) == set olens 78 x
+
+  putStrLn ""
+
   print e   -- Nothing
   print x   -- Just 42
   print x'  -- Just 42
