@@ -20,6 +20,8 @@ getMass x = fmap unMass $ fromDynamic x
 getHalfMass :: Fractional a => Dynamic -> Maybe a
 getHalfMass x = fmap ((/2).unMass) $ fromDynamic x
 
+twiceMass :: Mass -> Mass
+twiceMass (Mass x) = Mass $ 2*x
 
 x :: Mass
 x = Mass 7
