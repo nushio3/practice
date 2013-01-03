@@ -4,7 +4,7 @@
 
 import Data.Dynamic
 
-data LC = LC{ unLC :: Num a => a -> a} deriving (Typeable)
+newtype LC = LC{ unLC :: Num a => a -> a} deriving (Typeable)
 
 
 
