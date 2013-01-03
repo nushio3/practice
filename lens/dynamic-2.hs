@@ -20,6 +20,6 @@ dx = toDyn x
 
 
 main = do
-  print "hy"
+  print $ dx
   print $ fmap ((6*) .  unMass ) $ (fromDynamic dx)
   print $ fmap ((11.2-) .  unMass ) $ (fromDynamic dx)
