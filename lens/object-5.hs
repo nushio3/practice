@@ -73,4 +73,4 @@ main = do
 
   -- what is the most powerful tool for drilling?
   let energies = mapMaybe (^? energy) [empty,hammer1,hammer2,laser]
-  print $ energies
+  print $ energies             -- [24000.0,22500.0,26500.0]
