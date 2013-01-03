@@ -13,15 +13,20 @@ osetter :: Simple Setter Object Int
 osetter = cloneLens olens
 
 
-e, x, e', x' :: Object
+e, x, x', y, z :: Object
 e = Nothing
 x = e & set olens 42
-
-e' = Nothing
 x' = e & set osetter 42
 
+y = x & over olens (*2)
+z = e & over olens (*2)
+
+
+
+
 main = do
-  print e
-  print x
-  print e'
-  print x'
+  print e   -- Nothing
+  print x   -- Just 42
+  print x'  -- Just 42
+  print y   -- Just 84
+  print z   -- newfield.hs: not ready.

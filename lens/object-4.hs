@@ -26,20 +26,19 @@ member tag = lens gettr settr
 empty,x,y :: Obj
 empty = Obj Map.empty
 
-x = empty & set (member "price") (toDyn (1::Int))
-
-y = empty & set (member "price" . dynamic) (1::Int)
+-- I want 'y' to behave the same as 'x'
+x = empty & set (member "price") (toDyn (299::Int))
+y = empty & set (member "price" . dynamic) (299::Int)
 
 main = do
-  print $ toDyn (1::Int)
   print empty
-  print x
+  print x  -- Obj {unObj = fromList [("price",<<Int>>)]}
   let p :: Maybe Int
       p = x ^? (member "price" . dynamic)
-  print p
+  print p  -- Just 299
 
-  print y
+  print y -- Obj {unObj = fromList [("price",<<NotFound>>)]}
   let p :: Maybe Int
       p = y ^? (member "price" . dynamic)
-  print p
+  print p  -- Nothing
 
