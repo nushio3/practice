@@ -50,10 +50,10 @@ y = empty & insert "mass" 50
           & insert "momentum" 1500
 
 main = do
-  print empty
-  print x
-  print $ x ^? velocity
-  print $ x ^? momentum
-  print $ y ^? velocity
-  print $ y ^? momentum
-  print $ empty ^? momentum
+  print empty               -- Object {unObject = fromList []}
+  print x                   -- Object {unObject = fromList [("mass",30.0),("velocity",40.0)]}
+  print $ x ^? velocity     -- Just 40.0
+  print $ x ^? momentum     -- Just 1200.0
+  print $ y ^? velocity     -- Just 30.0
+  print $ y ^? momentum     -- Just 1500.0
+  print $ empty ^? momentum -- Nothing
