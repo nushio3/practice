@@ -55,5 +55,7 @@ main = do
   print $ x ^. mass
   print $ y ^. mass
 
-  print $ fmap (6*) $ getMass dx
-  print $ fmap (104.2-) $ getMass dx
+  print $ fmap (6*) $ getMass dy
+  print $ fmap (0.0-) $ getMass dy
+  print $ fmap (3*) $ getMass $ toDyn $ twiceMass x
+  print $ fmap (3e41*) $ getMass $ toDyn $ twiceMass x
