@@ -35,8 +35,7 @@ class Member o memb where
   type ValType o memb :: *
 
 data Mass = Mass deriving Typeable
-instance (Objective o)
-  => Member o Mass where
+instance Objective o => Member o Mass where
   type ValType o Mass = (UnderlyingReal o)
 
 mass :: (Objective o, UnderlyingReal o ~ real, Typeable real)
