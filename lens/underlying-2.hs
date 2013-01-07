@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -33,6 +35,9 @@ class Member o memb where
   type ValType o memb :: *
 
 data Mass = Mass deriving Typeable
+instance (Objective o)
+  => Member o Mass where
+  type ValType o Mass = (UnderlyingReal o)
 
 mass :: (Objective o, UnderlyingReal o ~ real, Typeable real)
      => Simple Traversal o real
@@ -72,7 +77,7 @@ instance Objective ObjectR where
 
 x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real, Num real) => o
 x = empty
-  & insert Mass (2 :: real)
+  & insert Mass 2
 
 main = do
   putStrLn "hu"
