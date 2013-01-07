@@ -20,10 +20,7 @@ newtype Table = Table {unTable :: Map.Map TypeRep Dynamic}
 class Objective o where
   table :: Simple Iso o Table
   tableMap :: Simple Iso o (Map.Map TypeRep Dynamic)
-  tableMap =
-    let iso' :: Simple Iso Table (Map.Map TypeRep Dynamic)
-        iso' = iso unTable Table
-    in table Cat.. iso'
+  tableMap = table Cat.. (iso unTable Table)
 -- Cat with an even longer tail =>  Cat....
 --  /\ /\
 -- (=^x^=)...   < Meow!!
