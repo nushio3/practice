@@ -50,12 +50,13 @@ mass r2ar obj = case Map.lookup tag (unTable tbl) of
 
 
 
-insert :: (Objective o, UnderlyingReal o ~ real, Typeable real)
-  => real -> o -> o
-insert x = over tableMap $ Map.insert tag (toDyn x)
+insert :: (Objective o, Member o memb, ValType o memb ~ val,
+           Typeable memb, Typeable val)
+  => memb -> val -> o -> o
+insert memb0 val0 = over tableMap $ Map.insert tag (toDyn val0)
   where
     tag :: TypeRep
-    tag = typeOf Mass
+    tag = typeOf memb0
 
 newtype ObjectD = ObjectD {unObjectD :: Table}
 instance UseReal ObjectD where
@@ -71,7 +72,7 @@ instance Objective ObjectR where
 
 x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real, Num real) => o
 x = empty
-  & insert (2 :: real)
+  & insert Mass (2 :: real)
 
 main = do
   putStrLn "hu"
