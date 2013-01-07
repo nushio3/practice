@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 import           Control.Applicative ((<$>),pure)
+import qualified Control.Category as Cat ((.))
 import           Control.Lens
 import           Control.Lens.Iso
 import           Data.Dynamic
@@ -14,23 +15,34 @@ import qualified Data.Map as Map
 class UseReal a where
   type UnderlyingReal a :: *
 
+newtype Table = Table {unTable :: Map.Map TypeRep Dynamic}
+
 class Objective o where
   table :: Simple Iso o Table
+  tableMap :: Simple Iso o (Map.Map TypeRep Dynamic)
+  tableMap =
+    let iso' :: Simple Iso Table (Map.Map TypeRep Dynamic)
+        iso' = iso unTable Table
+    in table Cat.. iso'
+-- Cat with an even longer tail =>  Cat....
+--  /\ /\
+-- (=^x^=)...   < Meow!!
+--   ||  ||
 
 empty :: Objective o => o
 empty = Table Map.empty ^. from table
-
-newtype Table = Table {unTable :: Map.Map TypeRep Dynamic}
 
 class Member o memb where
   type ValType o memb :: *
 
 data Mass = Mass deriving Typeable
 
-mass :: (Objective o, UnderlyingReal o ~ real, Typeable real) => Simple Traversal o real
+mass :: (Objective o, UnderlyingReal o ~ real, Typeable real)
+     => Simple Traversal o real
 mass r2ar obj = case Map.lookup tag (unTable tbl) of
   Just dr -> case fromDynamic dr of
-    Just r -> (\r' -> obj & over table (Table. Map.insert tag (toDyn r') . unTable)  ) <$> r2ar r
+    Just r -> (\r' -> obj & over tableMap
+          (Map.insert tag (toDyn r')) ) <$> r2ar r
     Nothing -> pure obj
   Nothing -> pure obj
   where
@@ -43,7 +55,7 @@ mass r2ar obj = case Map.lookup tag (unTable tbl) of
 
 insert :: (Objective o, UnderlyingReal o ~ real, Typeable real)
   => real -> o -> o
-insert x = over table (Table . Map.insert tag (toDyn x) . unTable)
+insert x = over tableMap $ Map.insert tag (toDyn x)
   where
     tag :: TypeRep
     tag = typeOf Mass
