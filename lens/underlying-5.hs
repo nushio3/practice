@@ -94,6 +94,7 @@ instance Objective ObjectR where
   table = iso unObjectR ObjectR
 
 
+
 newtype Object u = Object {unObject :: Table}
 instance Objective (Object u) where
   table = iso unObject Object
