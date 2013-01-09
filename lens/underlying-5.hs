@@ -1,4 +1,3 @@
-
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -6,9 +5,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-
-module Data.Object where
-
 
 import           Control.Applicative ((<$>),pure)
 import qualified Control.Category as Cat ((.))
