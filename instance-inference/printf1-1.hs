@@ -15,5 +15,5 @@ instance (Show a, PType r) => PType (a->r) where
 
 main :: IO ()
 main = do
-  putStrLn $ printf 0.1 :: IO ()
-  putStrLn $ printf "U"
+  putStrLn $ printf 0.1
+  putStrLn $ printf 0.1 "U" 178

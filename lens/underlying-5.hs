@@ -11,12 +11,15 @@ import qualified Control.Category as Cat ((.))
 import           Control.Lens
 import           Control.Lens.Iso
 import           Data.Dynamic
+import           Data.HList.FakePrelude
+import           Data.HList.HListPrelude
+import           Data.HList.Record
 import           Data.Ratio
 import qualified Data.Map as Map
 
 
-class (Typeable (UnderlyingReal a)) => UseReal a where
-  type UnderlyingReal a :: *
+class (Typeable (UnderlyingReal a)) => UseReal a b | a->b where
+  type UnderlyingReal a :: b
 
 newtype Table = Table {unTable :: Map.Map TypeRep Dynamic}
 
@@ -85,6 +88,17 @@ instance UseReal ObjectR where
   type UnderlyingReal ObjectR = Rational
 instance Objective ObjectR where
   table = iso unObjectR ObjectR
+
+data UnderlyingRealKey = UnderlyingRealKey
+instance TypeEq  UnderlyingRealKey  UnderlyingRealKey HTrue
+
+type RD = Record (HCons (LVPair UnderlyingRealKey Double) HNil)
+
+newtype Object underlayer = Object {unObject :: Table}
+instance Objective (Object _u) where
+  table = iso unObject Object
+instance (HasField UnderlyingRealKey u v) => UseReal (Object u) v where
+  type UnderlyingReal (Object u) = v
 
 x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real,
                      Num real) => o

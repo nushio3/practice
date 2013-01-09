@@ -7,13 +7,18 @@ printf = spr []
 class PType t where
   spr :: [String] -> t
 
-instance PType String where
-  spr xs = unwords $ reverse xs
+instance PType (IO a) where
+  spr xs = do
+    putStrLn $ unwords $ reverse xs
+    return undefined
 
 instance (Show a, PType r) => PType (a->r) where
   spr xs = (\x -> spr (show x:xs))
 
-printf' = printf
 
+main :: IO ()
 main = do
-  putStrLn $ printf' 0.1 "U" 178
+  printf
+  printf 0.1
+  printf 0.1 'U'
+  printf 0.1 'U' 178
