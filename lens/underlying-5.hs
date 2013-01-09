@@ -93,10 +93,6 @@ instance UseReal ObjectR where
 instance Objective ObjectR where
   table = iso unObjectR ObjectR
 
-data UnderlyingRealKey = UnderlyingRealKey
-instance TypeEq  UnderlyingRealKey  UnderlyingRealKey HTrue
-
-type RD = Record (HCons (LVPair UnderlyingRealKey Double) HNil)
 
 newtype Object u = Object {unObject :: Table}
 instance Objective (Object u) where
