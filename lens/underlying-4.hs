@@ -36,11 +36,6 @@ class (Objective o)
       => Member o memb where
   type ValType o memb :: *
 
-data Mass = Mass deriving Typeable
-instance (Objective o)
-         => Member o Mass where
-  type ValType o Mass = (UnderlyingReal o)
-
 makeLens :: (Objective o, Member o memb,
              Typeable memb, Typeable (ValType o memb))
      => memb -> Simple Traversal o (ValType o memb)
@@ -56,9 +51,6 @@ makeLens memb0 r2ar obj = case Map.lookup tag (unTable tbl) of
     tag :: TypeRep
     tag = typeOf memb0
 
-mass :: (Member o Mass, UseReal o)
-        => Simple Traversal o (ValType o Mass)
-mass = makeLens Mass
 
 insert :: (Objective o, Member o memb, ValType o memb ~ val,
            Typeable memb, Typeable val)
@@ -67,6 +59,20 @@ insert memb0 val0 = over tableMap $ Map.insert tag (toDyn val0)
   where
     tag :: TypeRep
     tag = typeOf memb0
+
+
+type MemberLens memb =
+  (Member o memb, Typeable (ValType o memb))
+        => Simple Traversal o (ValType o memb)
+
+data Mass = Mass deriving Typeable
+instance (Objective o) => Member o Mass where
+  type ValType o Mass = (UnderlyingReal o)
+mass :: MemberLens Mass
+mass = makeLens Mass
+
+
+
 
 newtype ObjectD = ObjectD {unObjectD :: Table}
 instance UseReal ObjectD where
@@ -80,7 +86,8 @@ instance UseReal ObjectR where
 instance Objective ObjectR where
   table = iso unObjectR ObjectR
 
-x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real, Num real) => o
+x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real,
+                     Num real) => o
 x = empty
   & insert Mass 2
 
