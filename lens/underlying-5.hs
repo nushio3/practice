@@ -18,8 +18,12 @@ import           Data.Ratio
 import qualified Data.Map as Map
 
 
-class (Typeable (UnderlyingReal a)) => UseReal a b | a->b where
-  type UnderlyingReal a :: b
+class (Typeable (UnderlyingReal a)) => UseReal a  where
+  type UnderlyingReal a :: *
+
+class (Typeable (UnderlyingInteger a)) => UseInteger a  where
+  type UnderlyingInteger a :: *
+
 
 newtype Table = Table {unTable :: Map.Map TypeRep Dynamic}
 
@@ -94,11 +98,14 @@ instance TypeEq  UnderlyingRealKey  UnderlyingRealKey HTrue
 
 type RD = Record (HCons (LVPair UnderlyingRealKey Double) HNil)
 
-newtype Object underlayer = Object {unObject :: Table}
-instance Objective (Object _u) where
+newtype Object u = Object {unObject :: Table}
+instance Objective (Object u) where
   table = iso unObject Object
-instance (HasField UnderlyingRealKey u v) => UseReal (Object u) v where
-  type UnderlyingReal (Object u) = v
+instance  UseReal u => UseReal (Object u) where
+  type UnderlyingReal (Object u) = UnderlyingReal u
+instance  UseInteger u => UseInteger (Object u) where
+  type UnderlyingInteger (Object u) = UnderlyingInteger u
+
 
 x :: forall o real. (Objective o, UnderlyingReal o ~ real, Typeable real,
                      Num real) => o
