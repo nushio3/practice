@@ -1,6 +1,6 @@
 import Data.SBV
 
-type E = SInteger
+type E = SWord8
 
 colLen :: E -> E
 colLen n = ite ( n .<= 1) 1 (colLen (col n))
@@ -14,7 +14,7 @@ sEven = (.== 0) . (`sDiv` 2)
 
 main = do
   ret <- sat $ do
-    x <- sInteger "x"
-    return $ colLen x .>= 100
+    x <- sWord8 "x"
+    return $ colLen x .== 3
   print ret
-
+  print "hi"
