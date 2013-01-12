@@ -17,16 +17,13 @@ main = do
   ret <- sat $ do
     xs     <- (newArray "xs" Nothing :: Symbolic (SArray Integer Integer))
     retIdx <- sInteger "retIdx"
-
     forall "i" >>= (\i -> constrain $ (i.<=1)
                           ==> readArray xs i .== 1)
-    forall "i" >>= (\i -> constrain $ (i.>= limit)
-                          ==> readArray xs i .== 1)
-    forall "i" >>= (\i -> constrain $ (i.>=2 &&& i .< limit &&& sEven i)
+    forall "i" >>= (\i -> constrain $ (i.>=2 &&& sEven i)
                           ==> readArray xs i .== 1+readArray xs (sDiv i 2))
-    forall "i" >>= (\i -> constrain $ (i.>=2 &&& i .< limit &&& sOdd i)
+    forall "i" >>= (\i -> constrain $ (i.>=2 &&& sOdd i)
                           ==> readArray xs i .== 1+readArray xs (3*i+1))
 
-    return $ (readArray xs retIdx) .== (100)
+    return $ readArray xs retIdx .>= 100 -- &&& retIdx .< limit &&& retIdx .>= 0
   print ret
   print "hi"
