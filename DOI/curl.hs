@@ -21,3 +21,6 @@ doi2BibTeX doi = do
 
 main = do
   BS.putStrLn =<< doi2BibTeX "10.1088/0004-637X/744/2/101"
+
+-- http://www.ottobib.com/2080781716451311683
+-- http://vaguelythreatening.wordpress.com/2011/02/20/autogenerating-bibtex-citations-from-isbn/
