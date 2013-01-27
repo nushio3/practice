@@ -1,6 +1,8 @@
 module Asm where
 
+
 import Data.SBV
+import Text.Printf
 
 type SReg = SWord8
 type SRegArray = [SWord8]
@@ -12,6 +14,8 @@ nReg = 16
 bitPerReg :: Num a => a
 bitPerReg = 8
 
+symbolicRegs :: Symbolic SRegArray
+symbolicRegs = symbolics [printf "e%cx" c | c <- take nReg $ ['0'..'9'] ++ ['a'..]]
 
 exec :: SInst -> SRegArray -> Symbolic SRegArray
 exec inst rs = do
