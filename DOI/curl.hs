@@ -10,7 +10,7 @@ import Network.Curl.Opts
 
 doi2BibTeX :: String -> IO BS.ByteString
 doi2BibTeX doi = do
-  let 
+  let
       opts = [ CurlFollowLocation True
              , CurlHttpHeaders ["Accept: text/bibliography; style=bibtex"]
              ]
@@ -24,3 +24,6 @@ main = do
 
 -- http://www.ottobib.com/2080781716451311683
 -- http://vaguelythreatening.wordpress.com/2011/02/20/autogenerating-bibtex-citations-from-isbn/
+
+-- ads serves as a good arXiv to Refereed paper resolver.
+-- http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1210.2508
