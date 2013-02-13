@@ -11,7 +11,7 @@ data Tree
   | Folder   { name :: String, children :: [Tree] }  
   deriving (Eq, Ord, Show, Generic)
 
-instance ToJSON Tree where
+instance ToJSON Tree 
 
 main = do
   BS.putStrLn $ encodePretty' defConfig{confIndent = 2} myBookmarks
