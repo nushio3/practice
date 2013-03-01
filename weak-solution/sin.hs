@@ -1,20 +1,27 @@
+
 import qualified Numeric.Optimization.Algorithms.CMAES as Opt
+import           Control.Concurrent.ParallelIO.Global (parallel)
+import           System.IO.Unsafe
 
 main = main1 2
 
 main1 n = do
-  let conf = Opt.minimize noise $ replicate n 0
+  let conf = Opt.minimize noise $ xs0
+      xs0 = replicate n 0
+  putStrLn $ "noise bef = " ++ show (noise xs0)
   xs <- Opt.run $ conf -- {Opt.verbose = True}
-  putStrLn $ "noise = " ++ show (noise xs)
+  putStrLn $ "noise aft = " ++ show (noise xs)
   putStrLn $ unwords $ map show xs
   main1 $ n+1
 
 noise :: [Double] -> Double
-noise args = sum $ map r2n ranges
+noise args = unsafePerformIO $ do
+  ys <- parallel $ map (return . r2n) ranges
+  return $ sum ys
   where
     r2n (a, b) =
-        (f b - f a - integ b a g)^2 +
-        (g b - g a + integ b a f)^2
+        (f b - f a - integ a b g)^2 +
+        (g b - g a + integ a b f)^2
       where f = poly fargs
             g = poly gargs
 
