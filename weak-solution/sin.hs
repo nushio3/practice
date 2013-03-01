@@ -12,7 +12,7 @@ main1 n = do
   xs <- Opt.run $ conf -- {Opt.verbose = True}
   putStrLn $ "noise aft = " ++ show (noise xs)
   putStrLn $ unwords $ map show xs
-  main1 $ n+1
+  main1 $ n+2
 
 noise :: [Double] -> Double
 noise args = unsafePerformIO $ do
