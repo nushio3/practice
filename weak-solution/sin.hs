@@ -1,9 +1,13 @@
 import qualified Numeric.Optimization.Algorithms.CMAES as Opt
 
-main = do
-  let conf = Opt.minimize noise $ replicate 8 0
+main = main1 2
+
+main1 n = do
+  let conf = Opt.minimize noise $ replicate n 0
   xs <- Opt.run $ conf -- {Opt.verbose = True}
-  print xs
+  putStrLn $ "noise = " ++ show (noise xs)
+  putStrLn $ unwords $ map show xs
+  main1 $ n+1
 
 noise :: [Double] -> Double
 noise args = sum $ map r2n ranges
