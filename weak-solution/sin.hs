@@ -12,7 +12,7 @@ main1 n = do
   xs <- Opt.run $ conf -- {Opt.verbose = True}
   putStrLn $ "noise aft = " ++ show (noise xs)
   putStrLn $ unwords $ map show xs
-  main1 $ n+1
+  main1 $ n+2
 
 noise :: [Double] -> Double
 noise args = unsafePerformIO $ do
@@ -40,10 +40,10 @@ poly as x = sum $ zipWith (\a p -> a * x^p) as [0..]
 
 
 nDiv :: Int
-nDiv = 1000
+nDiv = 300
 
 nIntegral :: Int
-nIntegral = 1000
+nIntegral = 300
 
 integ :: Double ->  Double -> ( Double -> Double ) -> Double
 integ bot top f =
