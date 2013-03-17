@@ -40,10 +40,10 @@ poly as x = sum $ zipWith (\a p -> a * x^p) as [0..]
 
 
 nDiv :: Int
-nDiv = 300
+nDiv = 100
 
 nIntegral :: Int
-nIntegral = 300
+nIntegral = 100
 
 integ :: Double ->  Double -> ( Double -> Double ) -> Double
 integ bot top f =
