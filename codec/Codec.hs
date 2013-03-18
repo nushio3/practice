@@ -23,8 +23,8 @@ import           Text.Printf
 data Pair (encC :: * -> Constraint) (decC :: * -> Constraint) = Pair
 data Solo (codecC :: * -> Constraint) = Solo
 
-type family Encoder p :: (* -> Constraint)
-type family Decoder p :: (* -> Constraint)
+type family Encoder c :: (* -> Constraint)
+type family Decoder c :: (* -> Constraint)
 type instance Encoder (Pair x y) = x
 type instance Decoder (Pair x y) = y
 
@@ -35,8 +35,8 @@ type instance Decoder (Solo x) = x
 
 class Codec codec where
   type Code codec :: *
-  encode :: ((Encoder codec) a) => codec -> a -> Code codec
-  decode :: ((Decoder codec) a) => codec -> Code codec -> Maybe a
+  encode :: (Encoder codec a) => codec -> a -> Code codec
+  decode :: (Decoder codec a) => codec -> Code codec -> Maybe a
 
 
 
@@ -89,7 +89,7 @@ instance Codec (Solo Dyn.Typeable) where
   encode _ = Dyn.toDyn
   decode _ = Dyn.fromDynamic
 
-testCodec :: (Codec c, (Encoder c) a, (Decoder c) a, Show a, Show (Code c))
+testCodec :: (Codec c, Encoder c a, Decoder c a, Show a, Show (Code c))
     => c -> a -> IO ()
 testCodec px a0 = do
   printf "input:  %s\n" $ show a0
