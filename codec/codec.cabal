@@ -16,9 +16,9 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:     Codec
-  build-depends:       base ==4.6.*, binary ==0.7.*, aeson ==0.6.*, bytestring ==0.10.*, Safe ==0.1.*, yaml==0.8.*
+  build-depends:       base ==4.*, binary >=0.7, aeson >=0.6, bytestring >=0.10, Safe >=0.1, yaml>=0.8
 
 executable main
   hs-source-dirs:     src/
   main-is:             main.hs
-  build-depends:       base ==4.6.*, codec
+  build-depends:       base ==4.*, codec
