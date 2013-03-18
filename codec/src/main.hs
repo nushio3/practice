@@ -9,5 +9,6 @@ main = do
       ans = (["Life", "Universe", "Everything"], Right 4.2)
   testCodec codecBinary ans
   testCodec codecShowRead ans
+  testCodec codecJSON ans
   testCodec codecYaml ans
   testCodec codecDynamic ans

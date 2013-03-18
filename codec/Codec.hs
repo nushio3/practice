@@ -59,19 +59,24 @@ instance Codec (Pair Show Read) where
   encode _ = show
   decode _ = Safe.readMay
 
--- codecJSON :: Pair Aeson.ToJSON Aeson.FromJSON
--- codecJSON = Pair
---
--- instance Codec (Pair Aeson.ToJSON Aeson.FromJSON) where
---   type Code (Pair Aeson.ToJSON Aeson.FromJSON) = BS.ByteString
---   encode _ = Aeson.encode
---   decode _ = Aeson.decode
-
-codecYaml :: Pair Aeson.ToJSON Aeson.FromJSON
-codecYaml = Pair
+codecJSON :: Pair Aeson.ToJSON Aeson.FromJSON
+codecJSON = Pair
 
 instance Codec (Pair Aeson.ToJSON Aeson.FromJSON) where
-  type Code (Pair Aeson.ToJSON Aeson.FromJSON) = BSS.ByteString
+  type Code (Pair Aeson.ToJSON Aeson.FromJSON) = BS.ByteString
+  encode _ = Aeson.encode
+  decode _ = Aeson.decode
+
+data CodecYaml = CodecYaml
+
+codecYaml :: CodecYaml
+codecYaml = CodecYaml
+
+type instance Encoder CodecYaml = Aeson.ToJSON
+type instance Decoder CodecYaml = Aeson.FromJSON
+
+instance Codec CodecYaml where
+  type Code CodecYaml = BSS.ByteString
   encode _ = Yaml.encode
   decode _ = Yaml.decode
 
