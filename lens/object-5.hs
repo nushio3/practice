@@ -61,6 +61,9 @@ hammer2 = empty & insert "mass" 50
 -- mass and velocity is not defined for laser
 laser = empty & insert "energy" 26500
 
+-- only mass is known for this object
+deadweight = empty & insert "mass" 1e20
+
 
 main = do
   print empty                  -- Object {unObject = fromList []}
@@ -72,5 +75,5 @@ main = do
   print $ empty ^? momentum    -- Nothing
 
   -- what is the most powerful tool for drilling?
-  let energies = mapMaybe (^? energy) [empty,hammer1,hammer2,laser]
+  let energies = mapMaybe (^? energy) [empty,hammer1,hammer2,laser {- ,deadweight -}]
   print $ energies             -- [24000.0,22500.0,26500.0]
