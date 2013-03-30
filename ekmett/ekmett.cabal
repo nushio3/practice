@@ -18,5 +18,33 @@ cabal-version:       >=1.8
 library
   exposed-modules:     Ekmett.Test
 
-  -- other-modules:       
-  build-depends:       base ==4.6.*
+  build-depends:       base >= 4
+                     , lens >= 3.9.0.2
+                     , free >= 3.4.1
+                     , machines >= 0.2.3.1
+                     , ad >= 3.4
+                     , speculation >= 1.4.1.2
+                     , profunctors >= 3.3.0.1
+                     , trifecta >= 1.0
+                     , mtl >= 2.1.2
+                     , ersatz >= 0.2.0.1
+                     , comonad >= 3.0.2
+                     , mmorph >= 1
+                     , pipes >= 3.2
+
+executable mmorph
+  hs-source-dirs:      src           
+  main-is:             mmorph.hs
+  build-depends:       base >= 4
+                     , ekmett
+                     , mtl
+                     , mmorph
+                     , transformers
+
+executable ad
+  hs-source-dirs:      src           
+  main-is:             ad.hs
+  build-depends:       base >= 4
+                     , ad
+                     , ekmett
+                     , free  
