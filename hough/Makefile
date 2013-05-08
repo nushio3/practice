@@ -1,2 +1,3 @@
-ghc -O3 main.hs
-./main < input.txt > output.txt
+all:
+	ghc -O3 main.hs
+	./main < input.txt
