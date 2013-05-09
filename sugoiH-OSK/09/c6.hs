@@ -1,0 +1,1 @@
+main=interact(\x->show$sum[1|'@'<-x])
