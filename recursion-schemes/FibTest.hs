@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.Functor.Foldable as RS -- from recursion-schemes
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
@@ -56,6 +57,15 @@ fibWithFix :: Integer -> Integer
 fibWithFix = fix fibAbs
 
 
+-- fix using recursion scheme definitions
+fix' :: (a -> a) -> a
+fix' = RS.hylo (\(RS.Cons f x) -> f x)
+               (\f -> RS.Cons f f)
+
+fibWithFix' :: Integer -> Integer
+fibWithFix' = fix' fibAbs
+
+
 -- utilitiy for testing
 newtype Small = Small Integer deriving (Show)
 instance Arbitrary Small where
@@ -75,3 +85,5 @@ main = hspec $ do
       fib n == fibWithL n
     prop "fix style matches the original fib" $ \(Small n) ->
       fib n == fibWithFix n
+    prop "recursion-scheme version matches the original fib" $ \(Small n) ->
+      fib n == fibWithFix' n
