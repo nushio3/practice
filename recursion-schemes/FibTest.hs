@@ -32,14 +32,25 @@ fibWithCPS :: Integer -> Integer
 fibWithCPS n = fibCPS n id
 
 -- fib defined using the recursion primitives.
+cata :: b -> (a -> b -> b) -> [a] -> b
+cata b f = h where
+  h []     = b
+  h (x:xs) = x `f` h xs
+
+ana :: (b -> Maybe (a, b)) -> b -> [a]
+ana g = h where
+  h b = case g b of
+    Nothing       -> []
+    Just (a', b') -> a' : h b'
+
+fix :: (a -> a)-> a
+fix = cata undefined ($) . ana (\f -> Just (f,f))
+
 
 fibAbs :: (Integer -> Integer) -> Integer -> Integer
 fibAbs fib n
-  | n <= 1 = 1
+  | n <= 1    = 1
   | otherwise = fib (n-1) + fib (n-2)
-
-fix :: (a->a)->a
-fix f = f (fix f)
 
 fibWithFix :: Integer -> Integer
 fibWithFix = fix fibAbs
@@ -48,8 +59,9 @@ fibWithFix = fix fibAbs
 -- utilitiy for testing
 newtype Small = Small Integer deriving (Show)
 instance Arbitrary Small where
-  arbitrary = fmap (Small . (`mod` 30)) arbitrary
+  arbitrary = fmap (Small . (`mod` 32)) arbitrary
   shrink = const []
+
 
 
 -- main test routine
