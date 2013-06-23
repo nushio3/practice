@@ -2,6 +2,9 @@ module Main where
 
 
 -- http://hackage.haskell.org/package/recursion-schemes
+
+import           Control.Applicative
+import qualified Control.Monad.Memo as MM
 import qualified Data.Functor.Foldable as RS
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.Hspec
@@ -50,13 +53,13 @@ fix :: (a -> a)-> a
 fix = cata undefined ($) . ana (\f -> Just (f,f))
 
 
-fibAbs :: (Integer -> Integer) -> Integer -> Integer
-fibAbs fib n
+fibBase :: (Integer -> Integer) -> Integer -> Integer
+fibBase fib n
   | n <= 1    = 1
   | otherwise = fib (n-1) + fib (n-2)
 
 fibWithFix :: Integer -> Integer
-fibWithFix = fix fibAbs
+fibWithFix = fix fibBase
 
 
 -- fix using recursion scheme definitions
@@ -65,13 +68,29 @@ fix' = RS.hylo (\(RS.Cons f x) -> f x)
                (\f -> RS.Cons f f)
 
 fibWithFix' :: Integer -> Integer
-fibWithFix' = fix' fibAbs
+fibWithFix' = fix' fibBase
 
+
+
+fibWithFixMemo :: Integer -> Integer
+fibWithFixMemo n =
+  MM.startEvalMemo $ fix (fibBaseA . MM.memo) n
+
+fibBaseA :: Applicative f => (Integer -> f Integer) -> Integer -> f Integer
+fibBaseA fib n
+  | n <= 1    = pure 1
+  | otherwise = (+) <$> fib (n-1) <*> fib (n-2)
 
 -- utilitiy for testing
+
 newtype Small = Small Integer deriving (Show)
 instance Arbitrary Small where
   arbitrary = fmap (Small . (`mod` 32)) arbitrary
+  shrink = const []
+
+newtype Medium = Medium Integer deriving (Show)
+instance Arbitrary Medium where
+  arbitrary = fmap (Medium . (`mod` 1024)) arbitrary
   shrink = const []
 
 
@@ -89,3 +108,7 @@ main = hspec $ do
       fib n == fibWithFix n
     prop "recursion-scheme version matches the original fib" $ \(Small n) ->
       fib n == fibWithFix' n
+    prop "memoizing version matches the original fib" $ \(Small n) ->
+      fib n == fibWithFixMemo n
+    prop "memoizing version and list versions are fast" $ \(Medium n) ->
+      fibWithFixMemo n == fibWithL n
