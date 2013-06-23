@@ -6,6 +6,7 @@ module Main where
 import           Control.Applicative
 import qualified Control.Monad.Memo as MM
 import qualified Data.Functor.Foldable as RS
+import qualified Data.Map as Map
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
@@ -81,6 +82,9 @@ fibBaseA fib n
   | n <= 1    = pure 1
   | otherwise = (+) <$> fib (n-1) <*> fib (n-2)
 
+
+
+
 -- utilitiy for testing
 
 newtype Small = Small Integer deriving (Show)
@@ -90,7 +94,7 @@ instance Arbitrary Small where
 
 newtype Medium = Medium Integer deriving (Show)
 instance Arbitrary Medium where
-  arbitrary = fmap (Medium . (`mod` 1024)) arbitrary
+  arbitrary = fmap (Medium . (`mod` 65536)) arbitrary
   shrink = const []
 
 
