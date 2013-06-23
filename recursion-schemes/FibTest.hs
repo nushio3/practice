@@ -1,6 +1,8 @@
 module Main where
 
-import qualified Data.Functor.Foldable as RS -- from recursion-schemes
+
+-- http://hackage.haskell.org/package/recursion-schemes
+import qualified Data.Functor.Foldable as RS
 import Test.QuickCheck.Arbitrary (Arbitrary(..))
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
@@ -12,7 +14,7 @@ fib n
   | n <= 1    = 1
   | otherwise = fib (n-1) + fib (n-2)
 
--- Memoized fib using list
+-- Memoized fib using list (it's fast!)
 
 fibL :: [Integer]
 fibL = 1:1: zipWith (+) fibL (tail fibL)
