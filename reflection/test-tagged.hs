@@ -49,19 +49,19 @@ day = 24*60*60
 main :: IO ()
 main = do
   Radius `is` 1.50e11 $ CentralMass `is` 1.99e30 $
-    printf "The orbital period of the Earth is %f years\n" $ period/year
+    printf "The orbital period of the Earth is %3.2f years\n" $ period/year
 
   Radius `is` 7.78e11 $ CentralMass `is` 1.99e30 $
-    printf "The orbital period of Jupiter is %f years\n" $ period/year
+    printf "The orbital period of Jupiter is %3.2f years\n" $ period/year
 
   Radius `is` 7.79e9  $ CentralMass `is` 2.11e30 $
-    printf "The orbital period of 51 Peg b is %f days\n" $ period/day
+    printf "The orbital period of 51 Peg b is %3.2f days\n" $ period/day
 
 {-
 
 $ runhaskell test-tagged.hs
-The orbital period of the Earth is 1.0043745892820515 years
-The orbital period of Jupiter is 11.863920379400026 years
-The orbital period of 51 Peg b is 4.213501854937773 days
+The orbital period of the Earth is 1.00 years
+The orbital period of Jupiter is 11.86 years
+The orbital period of 51 Peg b is 4.21 days
 
 -}
