@@ -18,14 +18,14 @@ use :: forall tag a. Given (tag, a) => tag -> a
 use _ = snd (given :: (tag, a))
 
 
--- | definition of concepts
+-- | definition of the concepts
 
 data Radius = Radius
 data CentralMass = CentralMass
 
 
 -- | you can calculate the orbital period of a planet given its
---   orbitar radius and the mass of the central star.
+--   orbital radius and the mass of the central star.
 
 period :: (Given (Radius, Double), Given (CentralMass, Double) ) => Double
 period = 2 * pi / sqrt((use CentralMass) * 6.67384e-11 / (use Radius)**3)
