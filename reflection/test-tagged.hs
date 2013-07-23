@@ -11,6 +11,8 @@ import Text.Printf
 
 -- | tagged reflection
 
+infix 1 `is`
+
 is :: forall tag a r. tag -> a -> (Given (tag, a) => r) -> r
 is tag0 val = give (tag0, val)
 
