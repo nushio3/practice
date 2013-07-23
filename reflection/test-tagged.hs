@@ -11,11 +11,11 @@ import Text.Printf
 
 -- | tagged reflection
 
-set :: forall tag a r. tag -> a -> (Given (tag, a) => r) -> r
-set tag0 val = give (tag0, val)
+is :: forall tag a r. tag -> a -> (Given (tag, a) => r) -> r
+is tag0 val = give (tag0, val)
 
-use :: forall tag a. Given (tag, a) => tag -> a
-use _ = snd (given :: (tag, a))
+the :: forall tag a. Given (tag, a) => tag -> a
+the _ = snd (given :: (tag, a))
 
 
 -- | definition of the concepts
@@ -28,7 +28,7 @@ data CentralMass = CentralMass
 --   orbital radius and the mass of the central star.
 
 period :: (Given (Radius, Double), Given (CentralMass, Double) ) => Double
-period = 2 * pi / sqrt((use CentralMass) * 6.67384e-11 / (use Radius)**3)
+period = 2 * pi / sqrt((the CentralMass) * 6.67384e-11 / (the Radius)**3)
 
 -- | some utility values
 
@@ -45,10 +45,10 @@ main = do
   give (Radius, 1.50e11) $ give (CentralMass, 1.99e30) $
     printf "The orbital period of the Earth is %f years\n" $ period/year
 
-  set Radius 7.78e11 $ set CentralMass 1.99e30 $
+  Radius `is` 7.78e11 $ CentralMass `is` 1.99e30 $
     printf "The orbital period of Jupiter is %f years\n" $ period/year
 
-  set Radius 7.79e9  $ set CentralMass 2.11e30 $
+  Radius `is` 7.79e9  $ CentralMass `is` 2.11e30 $
     printf "The orbital period of 51 Peg b is %f days\n" $ period/day
 
 {-
