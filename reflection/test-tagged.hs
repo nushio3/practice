@@ -1,8 +1,9 @@
 {- calculate orbital periods of some planets (in MKSA units) -}
-
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
 module Main where
 
 import Data.Reflection
@@ -25,11 +26,13 @@ the _ = snd (given :: (tag, a))
 data Radius = Radius
 data CentralMass = CentralMass
 
+type tag ::: a = Given (tag, a)
 
 -- | you can calculate the orbital period of a planet given its
 --   orbital radius and the mass of the central star.
 
-period :: (Given (Radius, Double), Given (CentralMass, Double) ) => Double
+period :: (Radius ::: Double, CentralMass ::: Double) => Double
+
 period = 2 * pi / sqrt((the CentralMass) * 6.67384e-11 / (the Radius)**3)
 
 -- | some utility values
