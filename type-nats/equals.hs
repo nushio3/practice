@@ -12,6 +12,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}  -- for <=, singRep, SingE
 {-# LANGUAGE FunctionalDependencies #-} -- for SingRep and SingE
 
+
 import GHC.TypeLits
 import GHC.Prim(Any)
 
@@ -20,15 +21,15 @@ type instance where
   Equals a a = True
   Equals a b = False
 
-data Natto
+data SBool (b :: Bool) = SBool
+class InB a where
+  inB :: a -> Bool
+instance InB (SBool True) where inB _ = True
+instance InB (SBool False) where inB _ = False
 
-newtype instance Sing (Any :: Bool) = SBool Bool
--- instance SingI True  where sing = SBool True
--- instance SingI False where sing = SBool False
-instance SingE (KindParam :: OfKind Bool) where
-  type DemoteRep (KindParam :: OfKind Bool) = Bool
-  fromSing (SBool b) = b
 
 
 main :: IO ()
-main = return ()
+main = do
+  print $ inB (SBool :: SBool (Equals Int Int))
+  print $ inB (SBool :: SBool (Equals Int Double))
