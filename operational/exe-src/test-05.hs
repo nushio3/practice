@@ -1,7 +1,9 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverlappingInstances #-}
+
 
 module Main where
 
@@ -31,6 +33,9 @@ readInt = singleton ReadInt
   
 writeInt :: Operational ILang m => Int -> m ()
 writeInt = singleton . WriteInt
+
+instance (Monad m, Operational ILang m) => Operational ILang (ProgramT SLang m) where
+  singleton = lift . singleton
 
 myProgram :: (Operational SLang m, Operational ILang m) => m ()
 myProgram = do
