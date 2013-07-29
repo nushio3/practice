@@ -29,6 +29,7 @@ executable test-02
 
   build-depends: 
       base ==4.6.*
+    , control-monad-loop
     , mtl
     , operational >= 0.2
     , random
