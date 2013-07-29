@@ -34,3 +34,13 @@ executable test-02
     , operational >= 0.2
     , random
     , transformers
+
+executable test-03
+  main-is: test-03.hs            
+  hs-source-dirs:    exe-src
+
+  build-depends: 
+      base ==4.6.*
+    , minioperational >= 0.2
+    , mtl
+    , transformers
