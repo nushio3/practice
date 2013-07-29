@@ -44,3 +44,13 @@ executable test-03
     , minioperational >= 0.2
     , mtl
     , transformers
+
+executable test-04
+  main-is: test-04.hs            
+  hs-source-dirs:    exe-src
+
+  build-depends: 
+      base ==4.6.*
+    , mtl
+    , minioperational >= 0.2
+    , transformers
