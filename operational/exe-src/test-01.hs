@@ -21,6 +21,9 @@ prog = do
 
 main :: IO ()
 main = interpret go prog where
+
+  {- interpreter that refuses to say "72" . -}
+
   go :: Inst x -> IO x
   go SayHello = putStrLn "ohayougozaimasu!"
   go GetLine = getLine
