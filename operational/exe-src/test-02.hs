@@ -80,7 +80,7 @@ runGame player1 player2 = go initialLog player1 player2
           getHand p = do
             vp <- viewT p
             case vp of
-              Return _           -> return (S, \_ -> forever $ playHand S)
+              Return _           -> return (S, \_ -> daiuchiPlayer)
               ReadLog :>>= kp  -> getHand (kp $ reverse gameState)
               PlayHand h :>>= kp -> return (h,kp)
 
@@ -113,3 +113,6 @@ aiPlayer = evalStateT ai $ cycle [G,C,P]
       (h:t) <- get
       lift $ playHand h
       put t
+
+daiuchiPlayer :: Monad m => Player m ()
+daiuchiPlayer = forever $ playHand S
