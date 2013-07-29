@@ -1,4 +1,31 @@
--- game of nim in operational.
+{- Janken Game in operational.
+   sample play session:
+
+$ ./dist/build/test-02/test-02
+> c
+you lose
+> c
+draw
+> ?
+[(C,G),(C,C)]
+> c?
+you win
+[(C,G),(C,C),(C,P)]
+> pgc
+you win
+you win
+you win
+> ?
+[(C,G),(C,C),(C,P),(P,G),(G,C),(C,P)]
+> pqgc?
+you win
+you lose
+you lose
+you lose
+
+
+-}
+
 
 {-# LANGUAGE GADTs #-}
 
@@ -7,6 +34,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Operational
 import Control.Monad.State
 import Control.Monad.Trans.Loop
+import System.IO
 import System.Random
 
 -- | Player's language
@@ -53,7 +81,7 @@ runGame player1 player2 = go initialLog player1 player2
             vp <- viewT p
             case vp of
               Return _           -> return (S, \_ -> forever $ playHand S)
-              ReadLog :>>= kp  -> getHand (kp gameState)
+              ReadLog :>>= kp  -> getHand (kp $ reverse gameState)
               PlayHand h :>>= kp -> return (h,kp)
 
 main :: IO ()
@@ -61,7 +89,10 @@ main = runGame humanPlayer aiPlayer
 
 humanPlayer :: MonadIO m => Player m ()
 humanPlayer = while (return True) $ do
-  str <- liftIO $ getLine
+  str <- liftIO $ do
+         putStr "> "
+         hFlush stdout
+         getLine
   mapM_ play str
     where
       play 'g' = lift $ playHand G -- play gu
@@ -70,7 +101,7 @@ humanPlayer = while (return True) $ do
       play 's' = lift $ playHand S -- surrender this turn
       play '?' = lift $ do         -- see the log
         currentLog <- readLog
-        liftIO $ print currentLog
+        liftIO $ print $ currentLog
       play 'q' = exit              -- abort game
       play _   = return ()
 
