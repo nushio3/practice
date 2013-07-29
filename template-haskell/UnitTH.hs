@@ -11,6 +11,6 @@ ut :: QuasiQuoter
 ut = QuasiQuoter
   { quoteType = const $ return $ ConT ''Data.Maybe.Maybe
   , quoteExp = const $ return $ ConE 'Data.Maybe.Just
-
-
+  , quotePat = undefined
+  , quoteDec = undefined
   }
