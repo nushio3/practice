@@ -83,6 +83,8 @@ myProgram :: MyProgram ()
 myProgram = do
   str <- readStr
   writeInt $ length str
+  n <- readInt
+  writeStr $ replicate n 'H'
 
 main :: IO ()
 main = interpret (slangIO &!& ilangIO) myProgram
