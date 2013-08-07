@@ -85,3 +85,12 @@ executable test-07
     , mtl
     , minioperational >= 0.4.2
     , transformers
+
+executable test-08
+  main-is: test-08.hs            
+  hs-source-dirs:    exe-src
+  build-depends: 
+      base ==4.6.*
+    , mtl
+    , minioperational >= 0.4.2
+    , transformers
