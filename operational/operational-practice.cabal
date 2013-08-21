@@ -47,7 +47,8 @@ executable test-03
     , transformers
 
 executable test-04
-  main-is: test-04.hs            
+  main-is: test-04.hs       
+  buildable: False               
   hs-source-dirs:    exe-src
 
   build-depends: 
@@ -60,9 +61,36 @@ executable test-04
 executable test-05
   main-is: test-05.hs            
   hs-source-dirs:    exe-src
-
+  buildable: False          
   build-depends: 
       base ==4.6.*
     , mtl
     , minioperational >= 0.2.1
+    , transformers
+
+executable test-06
+  main-is: test-06.hs            
+  hs-source-dirs:    exe-src
+  build-depends: 
+      base ==4.6.*
+    , mtl
+    , minioperational >= 0.4.2
+    , transformers
+
+executable test-07
+  main-is: test-07.hs            
+  hs-source-dirs:    exe-src
+  build-depends: 
+      base ==4.6.*
+    , mtl
+    , minioperational >= 0.4.2
+    , transformers
+
+executable test-08
+  main-is: test-08.hs            
+  hs-source-dirs:    exe-src
+  build-depends: 
+      base ==4.6.*
+    , mtl
+    , minioperational >= 0.4.2
     , transformers
