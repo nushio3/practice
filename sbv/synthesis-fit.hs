@@ -8,9 +8,9 @@ main = do
     a <- exists "a"
     b <- exists "b"    
     c <- exists "c"
-    ds <- forM [1..10] $ \x' -> do
+    ds <- forM [1..1000] $ \x' -> do
       let x :: SReal
           x = fromIntegral x'
-      return $ (a*x*x+b*x+c-1/x)^2
-    return $ sum ds .<= 0.09
+      constrain $ (a*x*x+b*x+c-1/x)^2 .<=0.2
+    return $ (true :: SBool)
   print ret
