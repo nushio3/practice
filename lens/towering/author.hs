@@ -21,8 +21,9 @@ prog = do
   
 prog2 :: WriterT LaTeX IO ()
 prog2 = do
-  tell $ LaTeX "Hoho"
-  scribe laText "HaHa"
+  tell $ LaTeX "From writer monad."
+  scribe laTeX $ LaTeX "From lens with LaTeX."  
+  scribe laText "From lens with String."
 
 main :: IO ()
 main = do
