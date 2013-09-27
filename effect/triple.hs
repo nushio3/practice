@@ -4,58 +4,84 @@ import Control.Monad.State
 import Control.Lens
 import Control.Monad.IO.Class
 
-data Aegis = Aegis { _alpha :: Int }
+data Attribute = Attribute { _writable :: Bool, _readable :: Bool }
   deriving (Eq,Show)
            
-makeClassy ''Aegis
+makeClassy ''Attribute
+{--- the above TH creates ----
 
-data Beast = Beast { _beta :: Double }
+class HasAttribute t where
+  attribute :: Lens' t Attribute
+  readable :: Lens' t Bool
+  writable :: Lens' t Bool
+
+instance HasAttribute Attribute where
+  attribute = id
+-}
+
+data Battery = Battery { _level :: Double }
   deriving (Eq,Show)
            
-makeClassy ''Beast
+makeClassy ''Battery
 
-data Chopin = Chopin { _gamma :: String }
+data Chopin = Chopin { _title :: String }
   deriving (Eq,Show)
 
 makeClassy ''Chopin
 
-data Suumo = Suumo { _suumoAegis :: Aegis, _suumoBeast :: Beast, _suumoChopin :: Chopin }
+data Robot 
+  = Robot 
+  { _robotAttribute :: Attribute
+  , _primaryBattery :: Battery
+  , _secondaryBattery :: Battery
+  , _robotChopin :: Chopin 
+  }
   deriving (Eq,Show)
            
-makeClassy ''Suumo
+makeClassy ''Robot
 
-instance HasAegis Suumo where aegis = suumoAegis
-instance HasBeast Suumo where beast = suumoBeast
-instance HasChopin Suumo where chopin = suumoChopin
+instance HasAttribute Robot where attribute = robotAttribute
+instance HasBattery Robot where battery = primaryBattery
+instance HasChopin Robot where chopin = robotChopin
 
-suumo0 :: Suumo
-suumo0 = Suumo (Aegis 42) (Beast 6) (Chopin "Nocturne")
+robot0 :: Robot
+robot0 = Robot (Attribute False False) (Battery 0) (Battery 100) 
+         (Chopin "Nocturne")
 
-addAegis :: (HasAegis s, MonadState s m) => Int -> m () 
-addAegis x = aegis . alpha += x
+enableWrite :: (HasAttribute s, MonadState s m) => m () 
+enableWrite = writable ||= True
 
-replicateBeast :: (HasBeast s, MonadState s m) => Double -> m ()
-replicateBeast x = beast . beta *= x
+addBattery :: (HasBattery s, MonadState s m) => Double -> m ()
+addBattery x = level += x
 
-bestOfChopin :: (HasChopin s, MonadState s m, MonadIO m) => m String
+moveBattery :: (HasBattery s, HasRobot s, MonadState s m) => Double -> m ()
+moveBattery x = do
+  primaryBattery . level -= x
+  secondaryBattery . level -= x
+  level += 2*x
+
+
+bestOfChopin :: (HasAttribute s, HasChopin s, MonadState s m, MonadIO m) => m ()
 bestOfChopin = do
-  oldStr <- use $ chopin . gamma
-  liftIO $ putStrLn $ "What is your most favorite chopin?"
-  newStr <- liftIO $ getLine
-  chopin . gamma .= newStr
-  return $ oldStr ++ " was kicked."
+  wf <- use $ attribute . writable
+  when wf $ do
+    oldStr <- use $ chopin . title
+    liftIO $ putStrLn $ "What is your most favorite chopin?"
+    newStr <- liftIO $ getLine
+    chopin . title .= newStr
+
   
 
-prog :: (HasAegis s, HasBeast s, HasChopin s, MonadIO m, MonadState s m) => m ()
+prog :: (HasAttribute s, HasBattery s, HasChopin s, MonadIO m, MonadState s m) => m ()
 prog = do
-  replicateBeast 1.11
-  addAegis 30
-  msg <- bestOfChopin
-  liftIO $ putStrLn msg
+  addBattery 44
+  moveBattery 28
+  enableWrite
+  bestOfChopin
   
 
 main :: IO ()
 main = do
-  suumo1 <- execStateT prog suumo0
-  print suumo1
+  robot1 <- execStateT prog robot0
+  print robot1
   
