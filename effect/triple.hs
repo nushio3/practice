@@ -72,7 +72,7 @@ bestOfChopin = do
 
   
 
-prog :: (HasAttribute s, HasBattery s, HasChopin s, MonadIO m, MonadState s m) => m ()
+prog :: (HasAttribute s, HasBattery s, HasChopin s, HasRobot s, MonadIO m, MonadState s m) => m ()
 prog = do
   addBattery 44
   moveBattery 28
