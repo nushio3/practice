@@ -1,5 +1,32 @@
 -- http://blog.sigfpe.com/2006/12/evaluating-cellular-automata-is.html
 
+
+
+
+class Additive a where
+    zero     :: a
+    (+), (-) :: a -> a -> a
+    negate   :: a -> a
+
+{- |
+          a + b === b + a
+    (a + b) + c === a + (b + c)
+       zero + a === a
+   a + negate a === 0
+-}
+
+class (Additive a) => Ring a where
+    (*)         :: a -> a -> a
+    one         :: a
+
+{- |
+  a * (b * c) === (a * b) * c
+      one * a === a
+      a * one === a
+  a * (b + c) === a * b + a * c
+-}
+
+
 import Control.Comonad
 
 data U x = U [x] x [x]
