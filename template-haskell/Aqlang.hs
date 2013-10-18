@@ -61,11 +61,12 @@ parseE str = do
       
 
 cvtE :: Component -> ExpQ
-cvtE (StrPart x) = stringE x
---cvtE () = appE (varE 'print) $ varE $ mkName nam
--- cvtE x         = appE (varE 'putStrLn) $ stringE x
+cvtE (StrPart x) = appE (varE 'putStr) (stringE x)
+cvtE (EmbedShow x) = appE (varE 'print) (varE $ mkName x)
+cvtE (EmbedMonad x) = (varE $ mkName x)                           
+
 
 joinE :: [ExpQ] -> ExpQ
-joinE = foldl ap [e| "" |] 
+joinE = foldl ap [e| return () |] 
   where
-    ap a b = appE (appE (varE '(++) ) a ) b
+    ap a b = appE (appE (varE '(>>) ) a ) b
