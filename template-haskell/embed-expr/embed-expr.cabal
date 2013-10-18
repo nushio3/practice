@@ -14,8 +14,10 @@ maintainer:          muranushi@gmail.com
 build-type:          Simple
 cabal-version:       >=1.8
 
-library
-  exposed-modules:     EmbedExpr
-  hs-source-dirs:      src/
-  -- other-modules:       
-  build-depends:       base ==4.6.*
+executable main
+  main-is: main.hs
+  build-depends:      
+     base ==4.* 
+   , haskell-src-meta
+   , template-haskell
+
