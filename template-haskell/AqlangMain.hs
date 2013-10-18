@@ -1,11 +1,23 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-import Aqlang
 
+import Aqlang
 
 main :: IO ()
 main = do
-  let nyan = "28-28-"
-  putStrLn [doc| Hello if case as `nyan ! |]
+  let nyanya = "28-28-"
+      
+  putStrLn [rawQ| Ascat is an aznyan. She sais `nyan . She sais `nyanya ! She's such a cutie^^~~~ |]
+  
+--   parseTest parseLang "#{AZcat}"
+--   parseTest parseLang "#{AZcat}@{BZdog}"
+--   parseTest parseLang "#{AZcat}@{BZdog} hoge"
+--   parseTest parseLang "kinow #{AZcat}@{BZdog} "
+--   parseTest parseLang "Ascat is an aznyan. She sais #{nyan} . She sais #@{nyanya} ! She's such #{a cutie^^~~~"
+  
+       
+  where
+    nyan :: Integer
+    nyan = 28
   

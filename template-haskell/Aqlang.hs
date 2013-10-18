@@ -3,26 +3,67 @@
 
 module Aqlang where
 
-import Language.Haskell.TH
-
- 
+import Control.Applicative
+import Data.Monoid
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
+import Text.Trifecta
+import Text.Trifecta.Delta
+import Text.Parser.LookAhead
+import Text.PrettyPrint.ANSI.Leijen as Pretty hiding (line, (<>), (<$>), empty, string)
+import System.IO
+
+data Component 
+  = StrPart    String
+  | EmbedMonad String
+  | EmbedShow  String deriving (Eq,Show)
+
+parseLang :: Parser [Component]
+parseLang = (many $ choice [try embedMonad, try embedShow, strPart]) <* eof
+
+strPart :: Parser Component
+strPart = StrPart <$> go <?> "String Part"
+  where
+    go = do
+      notFollowedBy $  choice [string "#{", string "@{"]
+      h <- anyChar
+      t <- manyTill anyChar (lookAhead $ choice [string "#{", string "@{", eof >> return ""])
+      return $ h:t
+
+embedMonad :: Parser Component
+embedMonad = EmbedMonad <$> between (string "@{") (string "}") (some $ noneOf "}")
+          <?> "Monad Part"
+
+
+embedShow :: Parser Component
+embedShow = EmbedShow <$> between (string "#{") (string "}") (some $ noneOf "}")
+          <?> "Show Part"
+
  
-doc :: QuasiQuoter
-doc = QuasiQuoter { 
-  quoteExp = joinE . map cvtE . parseE ,
+
+
+rawQ :: QuasiQuoter
+rawQ = QuasiQuoter { 
+  quoteExp = parseE ,
   quotePat = error "doc is defined only for expression context" ,  
   quoteType = error "doc is defined only for expression context" ,  
   quoteDec = error "doc is defined only for expression context" 
   }
 
-parseE :: String -> [String]
-parseE = words
+parseE :: String -> ExpQ
+parseE str = do
+  let res = parseString parseLang (Columns 0 0) str
+  case res of
+    Failure xs -> do 
+      runIO $ displayIO stdout $ renderPretty 0.8 80 $ xs <> linebreak
+      error "cannot parse ."
+    Success x -> joinE $ map cvtE x
+      
 
-cvtE :: String -> ExpQ
-cvtE ('`':nam) = varE $ mkName nam
-cvtE x         = stringE x
+cvtE :: Component -> ExpQ
+cvtE (StrPart x) = stringE x
+--cvtE () = appE (varE 'print) $ varE $ mkName nam
+-- cvtE x         = appE (varE 'putStrLn) $ stringE x
 
 joinE :: [ExpQ] -> ExpQ
 joinE = foldl ap [e| "" |] 
