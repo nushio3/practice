@@ -15,9 +15,7 @@ makeLenses ''Object
 -- The Type obtained by ghci
 coto :: (Functor f, Conjoined p, Contravariant f) =>
      ((Getting a s a -> a) -> a1) -> p a1 (f a1) -> p s (f s)
-coto go = to f
-  where
-    f s = go (s ^.)
+coto go = to (go . view)
 
 kineticEnergy :: Getter Object Double
 kineticEnergy = coto go where
