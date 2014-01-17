@@ -1,0 +1,7 @@
+#!/bin/sh
+
+while :
+do
+    yes "" | lualatex slide.tex
+    inotifywait -e modify slide.tex
+done
