@@ -65,3 +65,4 @@
 2009.688 28800 # Lynnfield September 8, 2009 (3.6GHz, 8 HW threads)
 2010.003 27680 # Clarksdale January 2010 (3.46GHz, 8 HW threads, 2 cores)
 2010.210 43200 # Gulftown 16 March, 2010 (3.6GHz, 12 HW threads, 6 cores)
+2013.416 41600 #16 HW threads, 8 cores
