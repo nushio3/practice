@@ -1,0 +1,89 @@
+\documentclass{beamer}  %% オプションは環境や利用するプログラムに
+%\documentclass[dvips,cjk]{beamer}   %% よって変える
+\usepackage{luatexja}
+
+%\AtBeginDvi{\special{pdf:tounicode 90ms-RKSJ-UCS2}} %% しおりが文字化けしないように
+\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}
+
+%\setbeamertemplate{navigation symbols}{} %% 右下のアイコンを消す
+
+\usetheme{CambridgeUS}         %% theme の選択
+%\usetheme{Boadilla}           %% Beamer のディレクトリの中の
+%\usetheme{Madrid}             %% beamerthemeCambridgeUS.sty を指定
+%\usetheme{Antibes}            %% 色々と試してみるといいだろう
+%\usetheme{Montpellier}        %% サンプルが beamer\doc に色々とある。
+%\usetheme{Berkeley}
+%\usetheme{Goettingen}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+
+%\usecolortheme{rose}          %% colortheme を選ぶと色使いが変わる
+%\usecolortheme{albatross}
+
+%\useoutertheme{shadow}                 %% 箱に影をつける
+%\usefonttheme{professionalfonts}       %% 数式の文字を通常の LaTeX と同じにする
+
+%\setbeamercovered{transparent}         %% 消えている文字をうっすらと表示する
+
+\setbeamertemplate{theorems}[numbered]  %% 定理に番号をつける
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{proposition}[thm]{Proposition}
+\theoremstyle{example}
+\newtheorem{exam}[thm]{Example}
+\newtheorem{remark}[thm]{Remark}
+\newtheorem{question}[thm]{Question}
+\newtheorem{prob}[thm]{Problem}
+
+\begin{document}
+\title[Beamer]{Beamer の使い方} 
+\author[Shinshu]{信州太郎}            %% ここに書かれた情報は色々なところに使われるので
+\institute[Shinshu Univ.]{信州大学}   %% なるべく設定した方が良い
+\date{February 6, 2007}
+
+\begin{frame}                  %% \begin{frame}..\end{frame} で 1 枚のスライド
+\titlepage                     %% タイトルページ
+\end{frame}
+
+\begin{frame}                  %% 目次 (必要なければ省略)
+\tableofcontents
+\end{frame}
+
+\section{箇条書き}             %% セクション名
+\begin{frame}
+\frametitle{松本}              %% フレームタイトル
+
+\begin{itemize}
+\item 豊科\pause               %% \pause でとまる
+\item 穂高\pause
+\item 明科
+\end{itemize}
+\end{frame}
+
+\section{定理型環境}           %% 定理型環境が使える
+\begin{frame}                  %% \newtheorem で新しい環境も作れる
+\begin{thm}
+定理型環境が使える。
+使い方は普通の \LaTeX と同じ
+\end{thm}
+\pause
+
+\begin{proof}
+証明も書ける。
+\end{proof}
+\pause
+
+\begin{exam}                   %% 色が違う
+example
+\end{exam}
+\end{frame}
+
+\section{文字の色}             %% 文字の色を変える
+\begin{frame}
+\frametitle{文字の色を変えてみよう}
+{\color{red}赤}\pause
+{\color{blue}青}\pause
+{\color{green}緑}
+\end{frame}
+
+\end{document}
+
