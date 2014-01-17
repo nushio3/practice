@@ -14,9 +14,13 @@ main = do
   
   let 
       strs2 = filter (not . isPrefixOf "#") strs
-      xs = map (ix 2 %~ ("pwn"++)) $ map (splitOn ",") strs2
-      
+      xs = map parse $ map (splitOn ",") strs2
+            
+      parse [x,y,z] = let
+           [day,mon,year] = map read $ splitOn "/" z
+        in [year+(mon+day/30)/12, read y]
+        
   
-  mapM_ print xs
+  mapM_ putStrLn $ map (unwords. map show) $ sort xs
 
   
