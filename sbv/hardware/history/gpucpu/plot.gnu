@@ -12,6 +12,8 @@ set ylabel "clock frequency (MHz)"
 plot "< cat clockfreq*.dat" t '' pt 6 \
  , 100*4**((x-1995)/3) t 'moore' lt 3
 
+
+
 set out "year_mips.eps"
 set ylabel "MIPS"
 plot "mipsperbuck.dat" t '' pt 6 \
@@ -28,3 +30,13 @@ plot \
 , 7*4**((x-2003.5)/3) t '' lt 3
 
 
+
+set out "year_top500.eps"
+set xtics 1990,10
+set ylabel "Linpack Max (Flops)"
+set xrange [1993:2025]
+set yrange [1e7:1e20]
+load "top500-labels.txt"
+plot "top500.dat" t '' pt 6 \
+ , 59.7e9*2**((x-1993.5)) t 'x2 every year' lt 2\
+ , 59.7e9*4**((x-1993.5)/3) t 'moore' lt 3
