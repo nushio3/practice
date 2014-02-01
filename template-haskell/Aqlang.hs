@@ -4,6 +4,7 @@
 module Aqlang where
 
 import Control.Applicative
+import Data.Char
 import Data.Monoid
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
@@ -62,8 +63,11 @@ parseE str = do
 
 cvtE :: Component -> ExpQ
 cvtE (StrPart x) = appE (varE 'putStr) (stringE x)
-cvtE (EmbedShow x) = appE (varE 'print) (varE $ mkName x)
-cvtE (EmbedMonad x) = (varE $ mkName x)                           
+cvtE (EmbedShow x) = appE (varE 'print) (varE $ mkName $ trim x)
+cvtE (EmbedMonad x) = (varE $ mkName $ trim x)                           
+
+trim :: String -> String
+trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
 
 
 joinE :: [ExpQ] -> ExpQ
