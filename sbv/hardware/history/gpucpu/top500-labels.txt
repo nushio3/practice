@@ -1,0 +1,44 @@
+set label 'CM-5/1024'  at 1994.0, 41790000000.0 left font 'Arial,15' rotate by 315
+set label 'Numerical Wind Tunnel'  at 1994.4166666666667, 86800000000.0 left font 'Arial,15' rotate by 315
+set label 'XP/S140'  at 1995.0, 100380000000.0 left font 'Arial,15' rotate by 315
+set label 'Numerical Wind Tunnel'  at 1995.4166666666667, 119000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 1996.0, 119000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 1996.4166666666667, 119000000000.0 left font 'Arial,15' rotate by 315
+set label 'SR2201/1024'  at 1997.0, 154280000000.0 left font 'Arial,15' rotate by 315
+set label 'CP-PACS/2048'  at 1997.4166666666667, 257739999999.99997 left font 'Arial,15' rotate by 315
+set label 'ASCI Red'  at 1998.0, 747600000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 1998.4166666666667, 936600000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 1999.0, 936600000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 1999.4166666666667, 936600000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2000.0, 1484700000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2000.4166666666667, 1665300000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2001.0, 1665300000000.0 left font 'Arial,15' rotate by 315
+set label 'ASCI White'  at 2001.4166666666667, 3456600000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2002.0, 5058200000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2002.4166666666667, 5058200000000.0 left font 'Arial,15' rotate by 315
+set label 'Earth-Simulator'  at 2003.0, 25102000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2003.4166666666667, 25102000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2004.0, 25102000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2004.4166666666667, 25102000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2005.0, 25102000000000.0 left font 'Arial,15' rotate by 315
+set label 'BlueGene/L beta-System'  at 2005.4166666666667, 49504000000000.0 left font 'Arial,15' rotate by 315
+set label 'BlueGene/L'  at 2006.0, 95760000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2006.4166666666667, 196420000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2007.0, 196420000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2007.4166666666667, 196420000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2008.0, 196420000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2008.4166666666667, 334740000000000.0 left font 'Arial,15' rotate by 315
+set label 'Roadrunner'  at 2009.0, 718200000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2009.4166666666667, 773500000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2010.0, 773500000000000.0 left font 'Arial,15' rotate by 315
+set label 'Jaguar'  at 2010.4166666666667, 1231300000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2011.0, 1231300000000000.0 left font 'Arial,15' rotate by 315
+set label 'Tianhe-1A'  at 2011.4166666666667, 1796200000000000.0 left font 'Arial,15' rotate by 315
+set label 'K computer'  at 2012.0, 5713400000000000.0 left font 'Arial,15' rotate by 315
+set label ''  at 2012.4166666666667, 7357000000000000.0 left font 'Arial,15' rotate by 315
+set label 'Sequoia'  at 2013.0, 11427360000000000.0 left font 'Arial,15' rotate by 315
+set label 'Titan'  at 2013.4166666666667, 12313000000000000.0 left font 'Arial,15' rotate by 315
+set label 'Tianhe-2 '  at 2014.0, 23703889999999996.0 left font 'Arial,15' rotate by 315
+set label ''  at 2014.4166666666667, 23703889999999996.0 left font 'Arial,15' rotate by 315
+set label 'US Exa'  at 2018.5, 700000000000000000.0 left font 'Arial,15' rotate by 315
+set label 'Japan Exa'  at 2020.5, 700000000000000000.0 left font 'Arial,15' rotate by 315
