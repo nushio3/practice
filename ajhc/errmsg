@@ -1,0 +1,15 @@
+ajhc trans.hs
+ajhc 0.8.0.11 (d93468e34f4514209048d4a92b1549e079ccd3fb)
+Finding Dependencies...
+Using Ho Cache: '/home/nushio//.ajhc/cache'
+Main                    [trans.hs] <~//.ajhc/cache/4fo8ej4ul394gquji3qod08p2l.ho>
+Fresh: <~//.ajhc/cache/4fo8ej4ul394gquji3qod08p2l.ho>
+Typechecking...
+Compiling...
+Collected Compilation...
+-- TypeAnalyzeMethods
+-- BoxifyProgram
+-- Boxy WorkWrap
+Stack:
+transformProgram: Simplify-SuperSimplify after Boxy WorkWrap
+ajhc: E.TypeCheck.getType: (EPi x108042546::Jhc.Prim.IO.State_ Jhc.Prim.IO.RealWorld::*::# (EAp Jhc@.Box.*::* (EVar x108042546::Jhc.Prim.IO.State_ Jhc.Prim.IO.RealWorld::*::#)),#,Jhc@.Box.*::*)
