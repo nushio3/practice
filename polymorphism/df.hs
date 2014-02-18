@@ -10,8 +10,12 @@ readFrame fn = do
   str <- readFile fn
   let (hl:tl) = lines str
   return $ case hl of
-    ('I':_) -> FrameI $ map read tl
-    ('D':_) -> FrameD $ map read tl
+    ('I':_) -> FrameI $ reader tl
+    ('D':_) -> FrameD $ reader tl
+  
+  where 
+    reader :: Read a => [String] -> [a]
+    reader = map read
 
 main :: IO ()
 main = do
