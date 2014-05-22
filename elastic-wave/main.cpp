@@ -144,7 +144,7 @@ void diffz3_p4(double f[NZ][NY][NX], double df_dz[NZ][NY][NX] ) {
   }  
 }
 
-int diff_V() {
+void diff_V() {
   diffx3_m4( Vx, dVx_dx );
   diffy3_p4( Vx, dVx_dy );
   diffz3_p4( Vx, dVx_dz );
@@ -156,7 +156,7 @@ int diff_V() {
   diffz3_m4( Vz, dVz_dz );
 }
 
-int diff_S() {
+void diff_S() {
   diffx3_p4( Sxx, dSxx_dx );
   diffy3_p4( Syy, dSyy_dy );
   diffx3_m4( Sxy, dSxy_dx );
@@ -167,6 +167,49 @@ int diff_S() {
   diffz3_m4( Sxz, dSxz_dz );
   diffz3_m4( Syz, dSyz_dz );
 }
+
+void update_V() {
+  double den = 1.0;
+  for (int k = 0; k < NZ; ++k) {
+    for (int j = 0; j < NY; ++j) {
+      for (int i = 0; i < NX; ++i) {
+	Vx[k][j][i] += den * Dt * 
+	  (dSxx_dx[k][j][i] + dSxy_dy[k][j][i] + dSxz_dz[k][j][i]);
+	Vy[k][j][i] += den * Dt * 
+	  (dSxy_dx[k][j][i] + dSyy_dy[k][j][i] + dSyz_dz[k][j][i]);
+	Vz[k][j][i] += den * Dt * 
+	  (dSxz_dx[k][j][i] + dSyz_dy[k][j][i] + dSzz_dz[k][j][i]);
+      }
+    }
+  }
+}
+
+void update_S() {
+  double lam = 1.0;
+  double mu = 0.7;
+  for (int k = 0; k < NZ; ++k) {
+    for (int j = 0; j < NY; ++j) {
+      for (int i = 0; i < NX; ++i) {
+	double divV = dVx_dx[k][j][i]
+	  + dVy_dy[k][j][i] + dVz_dz[k][j][i];
+	Sxx[k][j][i] +=  Dt * 
+	  (2*mu * dVx_dx[k][j][i] + lam * divV);
+	Syy[k][j][i] +=  Dt * 
+	  (2*mu * dVy_dy[k][j][i] + lam * divV);
+	Szz[k][j][i] +=  Dt * 
+	  (2*mu * dVz_dz[k][j][i] + lam * divV);
+	Sxy[k][j][i] +=  Dt * mu * 
+	  (dVx_dy[k][j][i] + dVy_dx[k][j][i]);
+	Sxz[k][j][i] +=  Dt * mu * 
+	  (dVx_dz[k][j][i] + dVz_dx[k][j][i]);
+	Syz[k][j][i] +=  Dt * mu * 
+	  (dVy_dz[k][j][i] + dVz_dy[k][j][i]);
+      }
+    }
+  }
+}
+
+
 
 
 int main () {
