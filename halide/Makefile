@@ -1,0 +1,19 @@
+all: slide.pdf  lesson01.out game-of-life.out loop.out
+slide.pdf:slide.tex
+	platex --shell-escape slide.tex
+#	bibtex slide
+	platex --shell-escape slide.tex
+	platex --shell-escape slide.tex
+	dvipdfmx slide.dvi
+lesson01.out: lesson01.cpp
+	g++ lesson01.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o lesson01.out
+#	g++ lesson01.cpp -I Halide/include/
+#       to execute, create symbolic-link of the Halide folder and set
+#	LD_LIBRARY_PATH=Halide/bin ./lesson_01
+
+game-of-life.out: game-of-life.cpp
+	g++ game-of-life.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o game-of-life.out
+
+
+loop.out: loop.cpp
+	g++ loop.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o loop.out

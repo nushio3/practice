@@ -1,0 +1,129 @@
+%\documentclass{beamer}  %% オプションは環境や利用するプログラムに
+\documentclass[dvipdfmx,cjk]{beamer}   %% よって変える
+%\usepackage{luatexja}
+\usepackage{tikz}
+\usepackage{color}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usetikzlibrary{positioning}
+\usetikzlibrary{calc}
+
+\usepackage{perpage}
+% use symbolic footnotes, instead of numbers
+\renewcommand*{\thefootnote}{\fnsymbol{footnote}}
+\MakePerPage{footnote}
+
+%\AtBeginDvi{\special{pdf:tounicode 90ms-RKSJ-UCS2}} %% しおりが文字化けしないように
+\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}
+\AtBeginSection{\frame{\sectionpage}}
+
+
+%\setbeamertemplate{navigation symbols}{} %% 右下のアイコンを消す
+
+\usetheme{CambridgeUS}         %% theme の選択
+%\usetheme{Boadilla}           %% Beamer のディレクトリの中の
+%\usetheme{Madrid}             %% beamerthemeCambridgeUS.sty を指定
+%\usetheme{Antibes}            %% 色々と試してみるといいだろう
+%\usetheme{Montpellier}        %% サンプルが beamer\doc に色々とある。
+%\usetheme{Berkeley}
+%\usetheme{Goettingen}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+
+%\usecolortheme{rose}          %% colortheme を選ぶと色使いが変わる
+%\usecolortheme{albatross}
+
+%\useoutertheme{shadow}                 %% 箱に影をつける
+%\usefonttheme{professionalfonts}       %% 数式の文字を通常の LaTeX と同じにする
+
+%\setbeamercovered{transparent}         %% 消えている文字をうっすらと表示する
+
+\setbeamertemplate{theorems}[numbered]  %% 定理に番号をつける
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{proposition}[thm]{Proposition}
+\theoremstyle{example}
+\newtheorem{exam}[thm]{Example}
+\newtheorem{remark}[thm]{Remark}
+\newtheorem{question}[thm]{Question}
+\newtheorem{prob}[thm]{Problem}
+
+\newcommand\done[1]{\textcolor{blue}{#1 済}}
+
+\begin{document}
+\title[Halide]{ステンシル計算言語Halide}
+\author[T. Muranushi]{村主崇行}            %% ここに書かれた情報は色々なところに使われるので
+\institute[RIKEN/AICS]{計算科学研究機構}   %% なるべく設定した方が良い
+%\date{April 23, 2014}
+
+\begin{frame}                  %% \begin{frame}..\end{frame} で 1 枚のスライド
+\titlepage                     %% タイトルページ
+\end{frame}
+
+\begin{frame}                  %% 目次 (必要なければ省略)
+\tableofcontents
+\end{frame}
+
+\section{はじめに} 
+\begin{frame}\frametitle{Halideとは？}
+ステンシル計算プログラムの生成とチューニングのためのライブラリ。
+画像処理のために開発された。
+\begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    &Paraiso & Halide\\
+    \hline
+    基本言語 & Haskell & C++ \\
+    コード生成対象 & x86, CUDA &
+    \multicolumn{1}{p{5cm}|}{x86/SSE, ARM v7/NEON, CUDA, Native Client, OpenCL }\\
+    扱える次元 & n次元 & n次元 \\ 
+    最適化の種類 & ループ融合、同期 & xxx \\ 
+    自動チューニング & あり & なし \\ 
+    \hline
+  \end{tabular}
+\end{center}
+%\citet{moczo2007finite}
+\end{frame}
+
+
+
+
+\bibliographystyle{abbrvnat}
+
+
+\section{参考文献}
+\begin{frame}[fragile]\frametitle{}
+  \begin{minipage}[t]{0.9\textwidth}
+    %    \bibliography{bunken}
+  \end{minipage}
+\end{frame}
+
+
+
+\section*{リサイクルボックス}
+
+
+
+
+\subsection{}
+\begin{frame}\frametitle{}
+\begin{eqnarray}
+\end{eqnarray}
+\end{frame}
+
+
+\begin{frame}[fragile]\frametitle{}
+\begingroup
+    \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+subroutine kernel__velderiv()
+\end{verbatim}
+\endgroup
+\vspace{-1cm}
+\end{frame}
+
+
+
+
+\end{document}
+
