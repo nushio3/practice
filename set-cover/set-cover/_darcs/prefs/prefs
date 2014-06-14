@@ -1,0 +1,1 @@
+test runhaskell Setup configure --user -fbuildExamples && runhaskell Setup build && runhaskell Setup haddock

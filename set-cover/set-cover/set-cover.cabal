@@ -1,0 +1,182 @@
+Name:             set-cover
+Version:          0.0.5
+License:          BSD3
+License-File:     LICENSE
+Author:           Henning Thielemann, Helmut Podhaisky
+Maintainer:       Henning Thielemann <haskell@henning-thielemann.de>
+Homepage:         http://code.haskell.org/~thielema/set-cover/
+Category:         Math, Algorithms
+Synopsis:         Solve exact set cover problems like Sudoku, 8 Queens, Soma Cube, Tetris Cube
+Description:
+  Solver for exact set cover problems.
+  Included examples:
+  Sudoku, Nonogram, 8 Queens, Domino tiling,
+  Soma Cube, Tetris Cube, Cube of L's, Logika's Baumeister puzzle.
+  Generic algorithm allows to choose between
+  slow but flexible @Set@ from @containers@ package
+  and fast but cumbersome bitvectors.
+  .
+  Build examples with @cabal install -fbuildExamples@.
+  .
+  The package needs only Haskell 98.
+Tested-With:      GHC==7.4.2, GHC==7.6.3
+Cabal-Version:    >=1.8
+Build-Type:       Simple
+
+Flag buildExamples
+  description: Build example executables
+  default:     False
+
+Source-Repository this
+  Tag:         0.0.5
+  Type:        darcs
+  Location:    http://code.haskell.org/~thielema/set-cover/
+
+Source-Repository head
+  Type:        darcs
+  Location:    http://code.haskell.org/~thielema/set-cover/
+
+Library
+  Build-Depends:
+    containers >=0.4 && <0.6,
+    utility-ht >=0.0.1 && <0.1,
+    base >=4 && <5
+
+  GHC-Options:      -Wall
+  Hs-Source-Dirs:   src
+  Exposed-Modules:
+    Math.SetCover.Bit
+    Math.SetCover.BitMap
+    Math.SetCover.BitSet
+    Math.SetCover.Exact
+    Math.SetCover.Cuboid
+
+Executable tetris-cube
+  If flag(buildExamples)
+    Build-Depends:
+      haha >=0.3.1 && <0.4,
+      pooled-io >=0.0 && <0.1,
+      set-cover,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: TetrisCube.hs
+  Other-Modules:
+    Utility
+
+Executable soma-cube
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Soma.hs
+
+Executable queen8
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      containers,
+      array >=0.1 && <0.5,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Queen8.hs
+
+Executable sudoku-setcover
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      containers,
+      array >=0.1 && <0.5,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Sudoku.hs
+
+Executable lcube
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      pooled-io >=0.0 && <0.1,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: LCube.hs
+  Other-Modules:
+    Utility
+
+Executable baumeister
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Baumeister.hs
+  Other-Modules:
+    Utility
+
+Executable alphametics
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      transformers,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Alphametics.hs
+
+Executable domino
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      unicode >=0.0 && <0.1,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall -rtsopts -threaded
+  Hs-Source-Dirs: example
+  Main-Is: Domino.hs
+
+Executable nonogram
+  If flag(buildExamples)
+    Build-Depends:
+      set-cover,
+      containers,
+      utility-ht,
+      base
+  Else
+    Buildable: False
+  GHC-Options:    -Wall
+  Hs-Source-Dirs: example
+  Main-Is: Nonogram.hs

@@ -1,0 +1,74 @@
+pristine:fb7f9a9fd62388ebd2afe4e2deec9b817e805ce5999ee4f4318418cea09985c8
+Starting with inventory:
+0000004489-f63fdd28eb1c513130bcadeede8099633eb3325a882c57a588e8d4cfb5aea12e
+[TAG 0.0.4
+haskell@henning-thielemann.de**20140101181556
+ Ignore-this: b967691f84be7892b4149ecfe35d8f4b
+] 
+hash: 0000002940-5989c70c448c7fa4804397800666fcd9167552de26c6bbe16cf29f12a3ab9cdf
+[bump version to 0.0.5
+haskell@henning-thielemann.de**20140101181609
+ Ignore-this: 979cee3a592a393b6c4fadf39e1465
+] 
+hash: 0000000260-9146cd23e0d0ad8f631ad62efb0e215194c7520490c0fe028ee7e84016bea128
+[example/Soma: comment on algorithm taken from TetrisCube
+haskell@henning-thielemann.de**20140102091033
+ Ignore-this: 463b62a223212fa33f9f51a2a3db0a1f
+] 
+hash: 0000000757-e292a65a11b744872d357666d89d3602fd1ecd8bcaafe4d0a557e9258f45283e
+[TetrisCube: use haha:Graphics.Ascii.Haha.Terminal instead of custom ANSI sequence construction
+haskell@henning-thielemann.de**20140103113958
+ Ignore-this: 7ed728701eff1dd5d6e80a9ab82fba45
+] 
+hash: 0000000798-266f9aef7a28c23b274a82b7d40ea9f5a05692ebdf56b88003f2faaf94829459
+[example/Domino: use new 'unicode' package for frame construction
+haskell@henning-thielemann.de**20140104163851
+ Ignore-this: b22a0725aa0d99e5e99ada1a6d66a62b
+] 
+hash: 0000002287-d0a71806c2993183054d55f89111aee173cf647712a0ff3445f58ee1f2ea4c22
+[Parallelism: replace by new pooled-io package
+haskell@henning-thielemann.de**20140105203526
+ Ignore-this: 280a27fc82875fafc3b78c459d4ba5f8
+] 
+hash: 0000001644-c041bb20ea9822dc93664d336be5537f2c32044c6f47d16e3e290e5a38f0e3ac
+[example/TetrisCube, LCube: adapt to renaming in PooledIO.Independent
+haskell@henning-thielemann.de**20140111170521
+ Ignore-this: 4ba6da6b6e0750b1651993594bcbcad1
+] 
+hash: 0000000682-c7c105936e63390df439eb57aa5fc79ebd8cd58aa36abdbb1968a65d3ec07cb5
+[example/Nonogram: first attempt
+haskell@henning-thielemann.de**20140512084152
+ Ignore-this: 5acddf10200111431dcd0f0ebbedf06f
+ does not work yet
+] 
+hash: 0000004483-cd5c6da4850533f32ce0a784eea50ab78f18110151afd8c2d44695007a557590
+[example/Nonogram: correct for test cases
+haskell@henning-thielemann.de**20140512093650
+ Ignore-this: 83846bab66ecc3fa20c4e98ffc9587b2
+] 
+hash: 0000002417-c41ea32ec25522bac0a35576b635d98ad1bf168d8c5c72891b8716b2591159b1
+[example/Nonogram.test: show set union
+haskell@henning-thielemann.de**20140512093749
+ Ignore-this: ebe952f1adc2b05082b1234c0cc06270
+] 
+hash: 0000000233-1685f88c9a35e7d20e9ef7d97af2c5864ba4f9ccf7742f101d22a1bea251b74d
+[example/Nonogram.test: more complex example 'cross'
+haskell@henning-thielemann.de**20140512094036
+ Ignore-this: 31e3f53cc7762cb4549bbda53b98b2e7
+] 
+hash: 0000000302-a328453492848f3a7318a670b474ac6c26ac628cca78e218afe1397dc4294510
+[example/Nonogram.encodeString: automatically convert from image to encoding for simplified testing
+haskell@henning-thielemann.de**20140512101123
+ Ignore-this: a42d4f08ddfe24cf26b868c1f2b58140
+] 
+hash: 0000001824-2884ed144d8c47bd50ec4af251e7f3f88a3ac2982e793b7c23ac3256ce28820a
+[example/Nonogram.assignsFromLines: less line breaks
+haskell@henning-thielemann.de**20140512101221
+ Ignore-this: d16e1f3a328637a63ccf52ac4c1b2c38
+] 
+hash: 0000000529-0fcfd53a6814e84225bf773a572009fdbbf9007c6f322b6c49d1fd96683a42c6
+[example/Nonogram.testP
+haskell@henning-thielemann.de**20140512104003
+ Ignore-this: aa4d6c3c6a9d29fac4a1f5e600b03723
+] 
+hash: 0000000616-d4851266cd3e01b068a0dd5a02574c3cc787887a828f285e0f3f7d3c227c4a7e
