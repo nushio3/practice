@@ -1,4 +1,4 @@
-all: slide.pdf  lesson01.out game-of-life.out loop.out
+all: slide.pdf  lesson01.out game-of-life.out loop.out gpu.out
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
 #	bibtex slide
@@ -17,3 +17,7 @@ game-of-life.out: game-of-life.cpp
 
 loop.out: loop.cpp
 	g++ loop.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o loop.out
+
+
+gpu.out: gpu.cpp
+	g++ gpu.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o gpu.out
