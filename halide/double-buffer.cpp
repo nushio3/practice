@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
 
   {
-    printf("Halide Version\n");
+    printf("Halide alloc Version\n");
     Halide::Func cell("cell");
     cell(x, y) = x+y;
  
@@ -63,12 +63,12 @@ int main(int argc, char **argv) {
   
 
     inBuf.set(output);
- 
-    Halide::Func cell2;
-    cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
- 
-    //output.set(output);
+
     for (int t=0; t<3; ++t) {
+      Halide::Func cell2;
+      cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
+ 
+
       Halide::Func dump;
       dump(x,y)=inBuf(x,y);
       Halide::Image<int32_t> dumpout = dump.realize(NX,NY); 
@@ -81,11 +81,13 @@ int main(int argc, char **argv) {
       }
       printf("\n");
  
-      cell2.realize(output);
+      output=cell2.realize(NX,NY);
       outBuf.set(output);
       std::swap(inBuf, outBuf);
     }
   } 
+
+
   return 0;
 }
 
