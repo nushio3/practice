@@ -1,4 +1,4 @@
-all: slide.pdf  lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out
+all: slide.pdf  lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out
 
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
@@ -33,3 +33,7 @@ loop-2.out: loop-2.cpp
 
 double-buffer.out: double-buffer.cpp
 	g++ double-buffer.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o double-buffer.out
+
+
+blur.out: blur.cpp
+	g++ blur.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o blur.out
