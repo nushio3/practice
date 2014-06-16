@@ -14,7 +14,14 @@ int main(int argc, char **argv) {
   cell(2, 3) = 1;
   cell(3, 3) = 1;
 
+  Halide::Image<int32_t> output;
+  output = cell.realize(NX,NY);
 
+  Halide::ImageParam input(Halide::Int(32), 2); // int32_t 2D
+
+
+  Halide::Func cell2;
+  cell2(x,y)=input(x,y)+1;
   Halide::Func nbd("nbd");
   Halide::Func bc("bc");
 
