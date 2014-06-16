@@ -65,14 +65,10 @@ int main(int argc, char **argv) {
     inBuf.set(output);
 
     for (int t=0; t<3; ++t) {
-      Halide::Func cell2;
-      cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
- 
-
+      // output the current state
       Halide::Func dump;
       dump(x,y)=inBuf(x,y);
       Halide::Image<int32_t> dumpout = dump.realize(NX,NY); 
-    
       for (int j = 0; j < NY; j++) {
 	for (int i = 0; i < NX; i++) {
 	  printf("%8d", dumpout(i, j));
@@ -81,8 +77,13 @@ int main(int argc, char **argv) {
       }
       printf("\n");
  
+      // updating logic
+      Halide::Func cell2;
+      cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
       output=cell2.realize(NX,NY);
       outBuf.set(output);
+
+      // swap the double-buffer
       std::swap(inBuf, outBuf);
     }
   } 
