@@ -3,6 +3,7 @@
 #include <vector>
  
 const int NX=5,NY=4;
+const int MAX_T=3;
  
 int main(int argc, char **argv) {
   printf("Cyclic Index Test\n");
@@ -28,7 +29,7 @@ int main(int argc, char **argv) {
 	inBuf[j][i] = i+j;
       }
     }
-    for (int t=0;t<3;++t) {
+    for (int t=0;t<MAX_T;++t) {
       for (int j = 0; j < NY; j++) {
 	for (int i = 0; i < NX; i++) {
 	  printf("%8d", inBuf[j][i]);
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
 
     inBuf.set(output);
 
-    for (int t=0; t<3; ++t) {
+    for (int t=0; t<MAX_T; ++t) {
       // output the current state
       Halide::Func dump;
       dump(x,y)=inBuf(x,y);
