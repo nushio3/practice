@@ -56,36 +56,34 @@ int main(int argc, char **argv) {
     printf("Halide alloc Version\n");
     Halide::Func cell("cell");
     cell(x, y) = x+y;
- 
+
     Halide::ImageParam inBuf(Halide::Int(32), 2); // int32_t 2D
     Halide::ImageParam outBuf(Halide::Int(32), 2); // int32_t 2D
 
-    Halide::Image<int32_t> output = cell.realize(NX,NY); 
-  
+    Halide::Func cell2;
+    cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
 
-    inBuf.set(output);
+    Halide::Image<int32_t> input = cell.realize(NX,NY); 
+    Halide::Image<int32_t> output(NX, NY);
+  
 
     for (int t=0; t<MAX_T; ++t) {
       // output the current state
-      Halide::Func dump;
-      dump(x,y)=inBuf(x,y);
-      Halide::Image<int32_t> dumpout = dump.realize(NX,NY); 
       for (int j = 0; j < NY; j++) {
 	for (int i = 0; i < NX; i++) {
-	  printf("%8d", dumpout(i, j));
+	  printf("%8d", input(i, j));
 	}
 	printf("\n");
       }
       printf("\n");
  
       // updating logic
-      Halide::Func cell2;
-      cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
-      output=cell2.realize(NX,NY);
+      inBuf.set(input);
       outBuf.set(output);
+      output = cell2.realize(NX,NY);
 
       // swap the double-buffer
-      std::swap(inBuf, outBuf);
+      std::swap(input, output);
     }
   } 
 
