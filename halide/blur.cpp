@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
   Halide::Func cell2, cell3; const float a = 0.5f, b = 0.25f;
   cell2(x,y)= (a * inPar(x,y) + b * inPar((x+1)%NX,y) + b * inPar((x+NX-1)%NX,y)) ;
   cell3(x,y)= (a * cell2(x,y) + b * cell2(x,(y+1)%NY) + b * cell2(x,(y+NY-1)%NY)) ;
+  //cell2.compute_root();
   // Halide::Var yo, yi;
   // cell3.split(y,yo,yi,16);
   // cell3.parallel(yo);
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
   {
     std::vector<Halide::Argument> arg_vect;
     arg_vect.push_back(Halide::Argument("inPar", true, Halide::Int(32)));
-    cell2.compile_to_bitcode("blur.bc", arg_vect, "blur");
+    cell3.compile_to_bitcode("blur.bc", arg_vect, "blur");
   }
 
   
