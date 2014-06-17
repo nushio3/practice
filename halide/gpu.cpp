@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   gradient.gpu_tile(x, y, 4,4);
   
   
-  Image<int> output = gradient.realize(4, 4);
+  Image<float_t> output = gradient.realize(4, 4);
 
   return 0;
 }
