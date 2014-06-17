@@ -14,9 +14,13 @@ int main(int argc, char **argv) {
   Var x("x"), y("y");
 
   gradient(x, y) = (0.0f + x) * y + 42.195f;
+  
+  gradient.compile_to_c("gradient.cpp", std::vector<Argument>(), "gradient");
+  gradient.compile_to_assembly("gradient.s", std::vector<Argument>(), "gradient");
+
   gradient.gpu_tile(x, y, 4,4);
   
-  
+
   Image<float_t> output = gradient.realize(4, 4);
 
   return 0;
