@@ -1,6 +1,7 @@
 #include <Halide.h>
 #include <stdio.h>
 #include <vector>
+
  
 const int NX=5,NY=4;
 const int MAX_T=4;
@@ -57,7 +58,7 @@ int main(int argc, char **argv) {
     Halide::Func cell("cell");
     cell(x, y) = x+y;
 
-    Halide::ImageParam inBuf(Halide::Int(32), 2); // int32_t 2D
+    Halide::ImageParam inBuf(Halide::Int(32), 2, "inBuf"); // int32_t 2D
 
     Halide::Func cell2;
     cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
@@ -77,6 +78,13 @@ int main(int argc, char **argv) {
  
       // updating logic
       inBuf.set(input);
+
+      {
+        std::vector<Halide::Argument> arg_vect;
+        arg_vect.push_back(Halide::Argument("inBuf", true, Halide::Int(32)));
+        cell2.compile_to_bitcode("double-buffer.bc", arg_vect, "double_buffer");
+      }
+
       output = cell2.realize(NX,NY);
 
       // swap the double-buffer
