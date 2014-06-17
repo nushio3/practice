@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdlib.h>
 
-const int NX=120,NY=80;
+const int NX=1200,NY=800;
 const int MAX_T=1000;
  
 int main(int argc, char **argv) {
@@ -20,22 +20,30 @@ int main(int argc, char **argv) {
   
 
   // precompile the programs
-  Halide::Func cell2, cell3;
-  cell2(x,y)= (inPar(x,y) + inPar((x+1)%NX,y) + inPar((x+NX-1)%NX,y))/3 ;
-  cell3(x,y)= (cell2(x,y) + cell2(x,(y+1)%NY) + cell2(x,(y+NY-1)%NY))/3 ;
-//	    Halide::Var yo, yi;
-//	    cell3.split(y,yo,yi,16);
-//	    cell3.parallel(yo);
-//	    cell2.store_at(cell3,yo);
-//	    cell2.compute_at(cell3,yi);
-//	    cell2.vectorize(x,4);
+  Halide::Func cell2, cell3; const float a = 0.5f, b = 0.25f;
+  cell2(x,y)= (a * inPar(x,y) + b * inPar((x+1)%NX,y) + b * inPar((x+NX-1)%NX,y)) ;
+  cell3(x,y)= (a * cell2(x,y) + b * cell2(x,(y+1)%NY) + b * cell2(x,(y+NY-1)%NY)) ;
+  // Halide::Var yo, yi;
+  // cell3.split(y,yo,yi,16);
+  // cell3.parallel(yo);
+  // //  cell3.vectorize(x,4);
+  // cell2.store_at(cell3,yo);
+  // cell2.compute_at(cell3,yi);
+  // cell2.vectorize(x,4);
+  
+  {
+    std::vector<Halide::Argument> arg_vect;
+    arg_vect.push_back(Halide::Argument("inPar", true, Halide::Int(32)));
+    cell2.compile_to_bitcode("blur.bc", arg_vect, "blur");
+  }
 
+  
 
   int ret = system("mkdir -p frame");
 
   for (int t=0; t<=MAX_T; ++t) {
     // output the current state
-    if(t%10==0){
+    if(t%100==0){
       std::cerr<< t << " " << ret << std::endl;
       std::ofstream ofs("debug.txt");
       for (int j = 0; j < NY; j++) {
