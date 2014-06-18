@@ -63,6 +63,13 @@ int main(int argc, char **argv) {
     Halide::Func cell2;
     cell2(x,y)=100*inBuf(x,y)+inBuf((x+1)%NX,(y+1)%NY);
 
+    { // debug-print the update logic
+      std::vector<Halide::Argument> arg_vect;
+      arg_vect.push_back(Halide::Argument("inBuf", true, Halide::Int(32)));
+      cell2.compile_to_bitcode("double-buffer.bc", arg_vect, "double_buffer");
+    }
+
+
     Halide::Image<int32_t> input = cell.realize(NX,NY); 
     Halide::Image<int32_t> output(NX, NY);
   
@@ -78,14 +85,7 @@ int main(int argc, char **argv) {
  
       // updating logic
       inBuf.set(input);
-
-      {
-        std::vector<Halide::Argument> arg_vect;
-        arg_vect.push_back(Halide::Argument("inBuf", true, Halide::Int(32)));
-        cell2.compile_to_bitcode("double-buffer.bc", arg_vect, "double_buffer");
-      }
-
-      output = cell2.realize(NX,NY);
+      cell2.realize(output);
 
       // swap the double-buffer
       std::swap(input, output);
