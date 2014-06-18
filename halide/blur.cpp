@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 const int NX=1200,NY=800;
-const int MAX_T=1000;
+const int MAX_T=1;
  
 int main(int argc, char **argv) {
   Halide::Var x,y;
