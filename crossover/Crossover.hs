@@ -73,6 +73,7 @@ printDyn x = trace . go $ toDyn x
  where
    go x | Just y <- fromDynamic x = show (y::Int)
    go x | Just y <- fromDynamic x = show (y::[Int])
+   go x | Just y <- fromDynamic x = show (y::Tree)   
    go x = show x
 
 traverse_all :: (Member Trace r, Data a) => a -> Eff r a

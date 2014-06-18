@@ -25,7 +25,7 @@ Build-Type:       Simple
 
 Flag buildExamples
   description: Build example executables
-  default:     False
+  default:     True
 
 Source-Repository this
   Tag:         0.0.5
