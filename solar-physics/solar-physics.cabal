@@ -24,5 +24,7 @@ executable solar-physics
     , authoring >= 0.3.4
     , HaTeX
     , text
+    , units
+    , units-defs
   -- hs-source-dirs:      
   default-language:    Haskell2010

@@ -7,5 +7,5 @@ $(PDF):$(EXE)
 	$(EXE)
 	(cd output; ./run.sh)
 
-$(EXE):Main.hs material/template.tex
+$(EXE):Main.hs material/template.tex */*.hs
 	cabal build
