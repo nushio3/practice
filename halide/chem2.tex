@@ -1,0 +1,28 @@
+\documentclass{beamer}  %% オプションは環境や利用するプログラムに
+\usepackage{luatexja}
+\usetheme{CambridgeUS} 
+
+
+%\documentclass[dvipdfmx,cjk]{beamer} 
+%\usepackage{graphicx}
+%\usepackage{tikz}
+%\usetheme{CambridgeUS} 
+
+
+
+\begin{document}
+\section{How 2 BibTeX on Beamer}
+\begin{frame} \frametitle{My theory in one slide}
+\cite{johnson2008notes}によれば、
+水は酸素と水素からできているのです \cite{moczo2007finite}.
+  \begin{eqnarray}
+    2H_2 + O_2 \to 2H_2O
+  \end{eqnarray}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{参考文献}{}
+  \bibliographystyle{apalike}
+  \bibliography{bunken}
+\end{frame}
+
+\end{document}
