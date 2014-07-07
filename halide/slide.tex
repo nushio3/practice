@@ -1,13 +1,18 @@
-%\documentclass{beamer}  %% オプションは環境や利用するプログラムに
-\documentclass[dvipdfmx,cjk]{beamer}   %% よって変える
-%\usepackage{luatexja}
+%\documentclass[dvipdfmx,cjk]{beamer}   %% よって変える
+\documentclass{beamer}  %% オプションは環境や利用するプログラムに
+\usepackage{luatexja}
 \usepackage{tikz}
 \usepackage{color}
 \usepackage{natbib}
+%\usepackage{bibentry}
+% \bibliographystyle{abbrvnat}
+\usepackage{chngcntr}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usetikzlibrary{positioning}
 \usetikzlibrary{calc}
+
+
 
 \usepackage{perpage}
 % use symbolic footnotes, instead of numbers
@@ -17,6 +22,12 @@
 %\AtBeginDvi{\special{pdf:tounicode 90ms-RKSJ-UCS2}} %% しおりが文字化けしないように
 \AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}
 \AtBeginSection{\frame{\sectionpage}}
+
+
+%ページ内で引用を済ます
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\tiny \bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
 
 
 %\setbeamertemplate{navigation symbols}{} %% 右下のアイコンを消す
@@ -51,6 +62,10 @@
 \newcommand\done[1]{\textcolor{blue}{#1 済}}
 
 \begin{document}
+
+\bibliographystyle{apalike}
+\nobibliography{bunken}
+
 \title[Halide]{ステンシル計算言語Halide}
 \author[T. Muranushi]{村主崇行}            %% ここに書かれた情報は色々なところに使われるので
 \institute[RIKEN/AICS]{計算科学研究機構}   %% なるべく設定した方が良い
@@ -66,8 +81,11 @@
 
 \section{はじめに} 
 \begin{frame}\frametitle{Halideとは？}
+\citet{johnson2008notes}
 ステンシル計算プログラムの生成とチューニングのためのライブラリ。
-画像処理のために開発された。
+画像処理のために開発された。\citep{moczo2007finite}
+
+
 \begin{center}
   \begin{tabular}{|c|c|c|}
     \hline
@@ -88,15 +106,32 @@
 
 
 
-\bibliographystyle{abbrvnat}
 
+\begin{frame}[allowframebreaks]{参考文献}{}
 
-\section{参考文献}
-\begin{frame}[fragile]\frametitle{}
-  \begin{minipage}[t]{0.9\textwidth}
-    %    \bibliography{bunken}
-  \end{minipage}
 \end{frame}
+
+
+
+
+% \begin{bibliography}
+% 
+% \bibitem[de~Saussure, 1995]{Saussure1995}
+% de~Saussure, F. (1995).
+% \newblock {\em Cours de Linguistique Grale}.
+% \newblock Payot.
+% 
+% \bibitem[Labov, 1972]{Labov1972}
+% Labov, W. (1972).
+% \newblock {\em Sociolinguistic Patterns}.
+% \newblock University of Pennsylvania Press, Philadelphia.
+% 
+% \end{bibliography}
+
+
+
+
+
 
 
 

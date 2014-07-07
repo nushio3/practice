@@ -1,0 +1,58 @@
+%\documentclass{beamer}  %% オプションは環境や利用するプログラムに
+%\usepackage{luatexja}
+%\usetheme{CambridgeUS} 
+
+
+\documentclass[dvipdfmx,cjk]{beamer} 
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetheme{CambridgeUS} 
+
+
+\begin{document}
+\section{How 2 BibTeX on Beamer}
+\begin{frame} \frametitle{My theory in one slide}
+水は酸素と水素からできているのです \cite{moczo2007finite}.
+  \begin{eqnarray}
+    2H_2 + O_2 \to 2H_2O
+  \end{eqnarray}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{参考文献}{}
+  \bibliographystyle{apalike}
+\begin{thebibliography}{}
+
+\bibitem[Johnson, 2008]{johnson2008notes}
+Johnson, S.~G. (2008).
+\newblock Notes on perfectly matched layers (pmls).
+\newblock {\em Lecture notes, Massachusetts Institute of Technology,
+  Massachusetts}.
+
+\bibitem[Moczo et~al., 2007]{moczo2007finite}
+Moczo, P., Robertsson, J.~O., and Eisner, L. (2007).
+\newblock The finite-difference time-domain method for modeling of seismic wave
+  propagation.
+\newblock {\em Advances in Geophysics}, 48:421--516.
+
+\bibitem[Moczo et~al., 2008]{moczo2008finite}
+Moczo, P., Robertsson, J.~O., and Eisner, L. (2007).
+\newblock The finite-difference time-domain method for modeling of seismic wave
+  propagation.
+\newblock {\em Advances in Geophysics}, 48:421--516.
+
+\bibitem[Moczo et~al., 2009]{moczo2009finite}
+Moczo, P., Robertsson, J.~O., and Eisner, L. (2007).
+\newblock The finite-difference time-domain method for modeling of seismic wave
+  propagation.
+\newblock {\em Advances in Geophysics}, 48:421--516.
+
+\bibitem[Moczo et~al., 2010]{moczo2010finite}
+Moczo, P., Robertsson, J.~O., and Eisner, L. (2007).
+\newblock The finite-difference time-domain method for modeling of seismic wave
+  propagation.
+\newblock {\em Advances in Geophysics}, 48:421--516.
+
+\end{thebibliography}
+\end{frame}
+
+\end{document}

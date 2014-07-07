@@ -1,0 +1,40 @@
+\documentclass{beamer}
+
+\usetheme{Montpellier}
+\usepackage{natbib}
+\usepackage{bibentry}
+\bibliographystyle{apalike}
+\usepackage{chngcntr}
+
+\counterwithin*{footnote}{page}
+\newcommand\footcite[1]{\footnote{\tiny \bibentry{#1}}\label{\thepage:#1}}
+\newcommand\secondcite[1]{\textsuperscript{\ref{\thepage:#1}}}
+
+\begin{document}
+\nobibliography{test-beamer}
+\begin{frame}
+
+  \frametitle{Stuff famous linguists asked}
+  \begin{block}{A block}
+       \begin{enumerate}
+        \item Is it part of \emph{langue} or part of \emph{parole}?\footcite{Saussure1995}
+        \item Is it socially stratified?\footcite{Labov1972}
+        \item More Saussure\secondcite{Saussure1995}
+       \end{enumerate}
+  \end{block}
+\end{frame}
+% The next frame is a duplicate for testing purposes    
+\begin{frame}
+
+  \frametitle{Stuff famous linguists asked}
+  \begin{block}{A block}
+       \begin{enumerate}
+        \item Is it part of \emph{langue} or part of \emph{parole}?\footcite{Saussure1995}
+        \item Is it socially stratified?\footcite{Labov1972}
+        \item More Saussure\secondcite{Saussure1995}
+       \end{enumerate}
+  \end{block}
+\end{frame}
+
+
+\end{document}
