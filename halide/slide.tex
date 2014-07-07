@@ -20,9 +20,8 @@
 
 \section{はじめに} 
 \begin{frame}\frametitle{Halideとは？}
-\cite{johnson2008notes}によれば、Halideは
-ステンシル計算プログラムの生成とチューニングのためのライブラリ。
-画像処理のために開発された。\cite{moczo2007finite}
+Halideはステンシル計算プログラムの生成とチューニングのためのライブラリ。
+画像処理のために開発された。\cite{ragan2012decoupling,ragan2013halide}
 
 
 \begin{center}
@@ -32,9 +31,9 @@
     \hline
     基本言語 & Haskell & C++ \\
     コード生成対象 & x86, CUDA &
-    \multicolumn{1}{p{5cm}|}{x86/SSE, ARM v7/NEON, CUDA, Native Client, OpenCL }\\
+    \multicolumn{1}{p{5cm}|}{x86/SSE, ARM, Native Client, OpenCL, CUDA,  ... }\\
     扱える次元 & n次元 & n次元 \\ 
-    最適化の種類 & ループ融合、同期 & xxx \\ 
+    最適化の種類 & ループ融合、同期 & \multicolumn{1}{p{5cm}|}{並列度、局所性、計算節約 の間のトレードオフ} \\ 
     自動チューニング & あり & なし \\ 
     \hline
   \end{tabular}

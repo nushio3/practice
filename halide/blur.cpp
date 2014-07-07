@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 const int NX=1200,NY=800;
-const int MAX_T=1;
+const int MAX_T=400;
  
 int main(int argc, char **argv) {
   Halide::Var x,y;
@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
   }
 
   
+  std::cerr<< "ready to blur!" << std::endl;
 
   int ret = system("mkdir -p frame");
 
