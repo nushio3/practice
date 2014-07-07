@@ -2,7 +2,7 @@ all: slide.pdf  lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2
 
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
-#	bibtex slide
+	bibtex slide
 	platex --shell-escape slide.tex
 	platex --shell-escape slide.tex
 	dvipdfmx slide.dvi
