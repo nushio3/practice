@@ -1,4 +1,4 @@
-all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out
+all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out
 
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
@@ -37,3 +37,6 @@ double-buffer.out: double-buffer.cpp
 
 blur.out: blur.cpp
 	g++ blur.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o blur.out
+
+bench-blur.out: bench-blur.cpp
+	g++ -O1 bench-blur.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o bench-blur.out

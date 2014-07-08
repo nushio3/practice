@@ -132,6 +132,20 @@ Halideではこのように記述できる。
 xxx 三角形の秘密はね
 \end{frame}
 
+
+\begin{frame}\frametitle{Halideがサポートするプログラム変換の種類}
+\begin{itemize}
+  \item 分割:1..(M*N)までのループを1..Mと1..Nの二重ループに分割する
+  \item 融合:1..Mと1..Nの2つのループを1つにまとめてしまう
+  \item スレッド並列化:各添字を並列に計算
+  \item アンロール:固定長のループを全部展開してループを消す
+  \item ベクトル化:固定長のループをベクトル命令に置き換える
+  \item タイル化:2次元のブロックを用意しそれを更新
+  \item 入れ子ループの入れ替え
+  \item 特殊化:条件変数が真の場合と偽の場合でループを分けループの中身を簡単化
+\end{itemize}
+\end{frame}
+
 \begin{frame}[fragile]\frametitle{fma命令の生成}
 
 例えば、{\tt .bc}ファイルを生成した上で、Bulldozer向けアセンブリを生成させることで、
