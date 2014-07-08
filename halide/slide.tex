@@ -7,7 +7,7 @@
 
 
 \title[Halide]{ステンシル計算言語Halide}
-\author[T. Muranushi]{村主崇行}            %% ここに書かれた情報は色々なところに使われるので
+\author[T. Muranushi]{村主崇行\\special thanks: 似鳥啓吾}            %% ここに書かれた情報は色々なところに使われるので
 \institute[RIKEN/AICS]{計算科学研究機構}   %% なるべく設定した方が良い
 
 \begin{frame}                  %% \begin{frame}..\end{frame} で 1 枚のスライド
@@ -132,8 +132,9 @@ Halideで配列変数としてもっとも頻繁に登場する
 
 \section{Halideの最適化} 
 \begin{frame}\frametitle{Halideの最適化空間}
-{\tt compute\_to\_root()} などの関数を呼び出したとき
-xxx 三角形の秘密はね
+\begin{center}
+\includegraphics[width=10cm]{figure/doc/schedule-space.png}
+\end{center}
 \end{frame}
 
 
@@ -163,6 +164,20 @@ clang -O1 -march=bdver1 -ffp-contract=fast blur.bc -S
 \vspace{-1cm}
 
 
+\end{frame}
+
+
+\section{ベンチマーク}
+\begin{frame}\frametitle{ベンチマーク環境}
+\begin{center}
+  \begin{tabular}{|c|c|}
+    \hline
+    マシン名 & armagnac0\\
+    CPU & Bulldozer, 64 cores \\
+    Memory & 256GB \\
+    \hline
+  \end{tabular}
+\end{center}
 \end{frame}
 
 
