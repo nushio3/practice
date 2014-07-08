@@ -15,7 +15,7 @@ namespace{
 
 void bench(int NX, int NY, int MAX_T) {
 
-  Halide::Var x,y, yo, yi;
+  Halide::Var x,y, yo, yi, xo, xi;
   Halide::Func initial_condition("initial_condition");
   initial_condition(x, y) = 0.0f;
   initial_condition(NX/3, NY/4) = 1.0f* NX*NY ;
@@ -28,12 +28,15 @@ void bench(int NX, int NY, int MAX_T) {
 
   // precompile the programs
   Halide::Func cell2, cell3; const float a = 0.5f, b = 0.25f;
-  cell2(x,y)= (a * inPar(x,y) + b * inPar(clamp(x+1,0,NX-1),y) + b * inPar(clamp(x+2,0,NX-1),y)) ;
-  cell3(x,y)= (a * cell2(x,y) + b * cell2(x,clamp(y+1,0,NY-1)) + b * cell2(x,clamp(y+2,0,NY-1))) ;
+  cell2(x,y)= (a * inPar(x,y) + b * inPar(clamp(x+1,0,NX-1),y) + b * inPar(clamp(x-1,0,NX-1),y)) ;
+  cell3(x,y)= (a * cell2(x,y) + b * cell2(x,clamp(y+1,0,NY-1)) + b * cell2(x,clamp(y-1,0,NY-1))) ;
   // cell3.parallel(y);
 
   cell3.split(y, yo, yi, 16).parallel(yo).parallel(yo).vectorize(x,4);
   cell2.store_at(cell3,yo).compute_at(cell3,yi).vectorize(x,4);
+
+  //cell3.tile(x,y,xo, yo, xi, yi, 256,256).parallel(xo).vectorize(xi,4);
+  //cell2.store_at(cell3,xo).compute_at(cell3,xi).vectorize(x,4);
   
   for (int t=0; t<=MAX_T; ++t) {
     // updating logic
@@ -67,8 +70,8 @@ int main(int argc, char **argv) {
   // uisng std::endl;
   
 
-  for (size_t ny = 16; ny < (2<<15); ny*=2) {
-    for (size_t nx = 16; nx < (2<<15); nx*=2) {
+  for (size_t ny = 1024; ny < (2<<15); ny*=2) {
+    for (size_t nx = 1024; nx < (2<<15); nx*=2) {
       if (nx*ny >= (2<<28)) continue;
 
       for (size_t t_max = 1; t_max <= 1000;t_max *= 10) {
