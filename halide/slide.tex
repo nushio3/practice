@@ -19,6 +19,11 @@
 \end{frame}
 
 \section{はじめに} 
+
+\begin{frame}\frametitle{ステンシル計算とは？}
+わお
+\end{frame}
+
 \begin{frame}\frametitle{Halideとは？}
 Halideはステンシル計算プログラムの生成とチューニングのためのライブラリ。
 画像処理のために開発された。\cite{ragan2012decoupling,ragan2013halide}
@@ -40,6 +45,107 @@ Halideはステンシル計算プログラムの生成とチューニングの�
 \end{center}
 \end{frame}
 
+\section{Halideの文法} 
+\begin{frame}[fragile]\frametitle{Halideの文法}
+
+プログラミング言語Halideは、{\tt C++} のライブラリとして実装されている。
+
+したがってHalideでプログラムするということはC++のプログラムを書くことになる。
+
+基本的な型として、$n$次元配列を表す{\tt Func}と、配列添字変数を表す{\tt Var}
+があり、これらを組み合わせてステンシル計算を記述する。
+
+\pause
+
+\begingroup
+    \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+Func input = initial_condition.realize(NX,NY);
+Var i,j;
+Func cell2 = (input(i-1,j)+input(i,j)+input(i+1,j))/3;
+Func output = (input(i,j-1)+input(i,j)+input(i,j+1))/3;
+\end{verbatim}
+\endgroup
+
+\pause
+
+以上のような構文を実現するため、C++の演算子オーバーロードを多用している。
+例えば、複数引数関数のように見えるものはカンマ演算子{\tt ,}をオーバーロードすることで
+実現している。
+
+\end{frame}
+
+
+\begin{frame}[fragile]\frametitle{Halideのプログラムの例}
+
+Halideではステンシル計算をとても簡潔な形で記述することができる。
+
+\pause
+
+たとえば、以下のような核酸方程式の離散化解法は
+\begin{eqnarray}
+C_\mathrm{in} &=& \mathrm{initial~condition} \\
+C_2 [i,j] &=& \frac{1}{3}\left(C_\mathrm{in}[i-1,j] + C_\mathrm{in}[i,j] + C_\mathrm{in}[i+1,j]\right) \\
+C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j] + C_\mathrm{2}[i,j+1]\right)
+\end{eqnarray}
+
+\pause
+
+Halideではこのように記述できる。
+\begin{center}
+\begingroup
+    \fontsize{9pt}{10pt}\selectfont
+\begin{verbatim}
+    Var i,j;
+    Func input = initial_condition.realize(NX,NY);
+    Func cell2 = (input(i-1,j)+input(i,j)+input(i+1,j))/3;
+    Func output = (input(i,j-1)+input(i,j)+input(i,j+1))/3;
+\end{verbatim}
+\endgroup
+\end{center}
+
+\end{frame}
+
+
+\begin{frame}[fragile]\frametitle{Halideのコード生成と実行}
+
+{\tt Func}
+{\tt Image}
+
+{\tt realize()}関数を呼び出して
+{\tt Func}型を
+{\tt Image}型に変換したとき
+
+\begingroup
+    \fontsize{9pt}{10pt}\selectfont
+\begin{verbatim}
+    cell3.compile_to_bitcode("blur.bc", arg_vect, "blur");
+\end{verbatim}
+\endgroup
+
+\end{frame}
+
+
+\section{Halideの最適化} 
+\begin{frame}\frametitle{Halideの最適化空間}
+{\tt compute\_to\_root()} などの関数を呼び出したとき
+xxx 三角形の秘密はね
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{fma命令の生成}
+
+例えば、{\tt .bc}ファイルを生成した上で、Bulldozer向けアセンブリを生成させることで、
+fma(融合加乗算)命令を含むアセンブリを生成できる。
+\begingroup
+    \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+clang -O1 -march=bdver1 -ffp-contract=fast blur.bc -S
+\end{verbatim}
+\endgroup
+\vspace{-1cm}
+
+
+\end{frame}
 
 
 \begin{frame}[allowframebreaks]{参考文献}{}
