@@ -42,6 +42,8 @@ void bench(int NX, int NY, int MAX_T) {
     // updating logic
     inPar.set(input);
     output=cell3.realize(NX,NY);
+
+
     // swap the double-buffer
     std::swap(input, output);
   }
