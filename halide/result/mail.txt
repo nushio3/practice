@@ -1,0 +1,9 @@
+Dear Halide developers,
+
+In aim to write physical simulations such as hydrodynamics equations solvers in Halide, I started to write simple examples.
+
+1. How to write a boundary condition?
+
+I am trying to write a simple boundary condition, namely a fixed boundary condition that returns 0 anywhere outside of the computed region. I was able to write this, but due to the strictness of `select` function I had to pay attention never to access xxxx what I wrote seems more complicated than necessary (see below.) May I ask if there's any 
+
+
