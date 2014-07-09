@@ -410,7 +410,9 @@ $C_\mathrm{blurx} [i,j]$ の要素を計算するが、それを保持してお�
   \begin{tabular}{|c|c|}
     \hline
     マシン名 & armagnac0\\
-    CPU & Bulldozer, 64 cores \\
+    CPU & AMD Opteron${}^\mathrm{(TM)}$ Processor 6376 \\
+    freq & 1400MHz \\
+    cores & 64 \\
     Memory & 256GB \\
     \hline
   \end{tabular}
@@ -422,6 +424,47 @@ $C_\mathrm{blurx} [i,j]$ の要素を計算するが、それを保持してお�
 \end{itemize}
 \end{frame}
 
+
+\begin{frame}[fragile]\frametitle{ベンチマーク対象と環境}
+
+シミュレーション対象アルゴリズム:
+
+\begingroup \footnotesize
+\begin{eqnarray*}
+C_\mathrm{in} &=& \mathrm{initial~condition} \\
+C_\mathrm{blurx} [i,j] &=& \frac{1}{3}\left(C_\mathrm{in}[i-1,j] + C_\mathrm{in}[i,j] + C_\mathrm{in}[i+1,j]\right) \\
+C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j] + C_\mathrm{2}[i,j+1]\right)
+\end{eqnarray*}
+\endgroup
+
+問題サイズ$NX,NY$をそれぞれ$[16 .. 2^{15}]$まで変化させて(コード生成時間を含む)実行時間を測定する。
+
+{\tt 1 core}:とくにコード変換なし
+
+{\tt 64 core}:以下のコード変換を施す
+
+\begingroup
+    \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+  cell3.split(y, yo, yi, 16).parallel(yo).vectorize(x,4);
+  cell2.store_at(cell3,yo).compute_at(cell3,yi).vectorize(x,4);
+\end{verbatim}
+\endgroup
+
+
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{実行時間}
+\begin{center}
+\includegraphics[width=6cm,angle=270]{figure/result-wct.eps}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{実行効率}
+\begin{center}
+\includegraphics[width=6cm,angle=270]{figure/result-ef.eps}
+\end{center}
+\end{frame}
 
 \begin{frame}[allowframebreaks]{参考文献}{}
   \bibliographystyle{apalike}
