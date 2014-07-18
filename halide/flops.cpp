@@ -15,20 +15,20 @@ namespace{
   }
 }
 
-const int NX = 64;
+const int NX = 64,NY=64;
 
 int main (){
   
-  Halide::Var x;
+  Halide::Var x,y;
   Halide::Func initial_condition("ic");
-  initial_condition(x) = 1.0f / (1.25f + x);
-  Halide::Image<float_t> input = initial_condition.realize(NX);
+  initial_condition(x,y) = 1.0f / (1.25f + x+y);
+  Halide::Image<float_t> input = initial_condition.realize(NX,NY);
   
-  Halide::RDom r(0,1000);
+  Halide::RDom r(0,1000000000);
   Halide::Func f("f");
-  f(x) = input(x);
+  f(x,y) = input(x,y);
   
-  f(x) = f(x) * 0.25f + r;
+  f(x,y) = f(x,y) * 0.25f + r;
 
   {
     std::vector<Halide::Argument> arg_vect;
@@ -37,15 +37,17 @@ int main (){
     f.compile_to_assembly("flops.s", arg_vect, "flops");
   }
 
-  f.vectorize(x,8);
+  f.parallel(y).vectorize(x,8);
   
 
 
-  Halide::Image<float_t> output = f.realize(NX);
+  Halide::Image<float_t> output = f.realize(NX,NY);
 
   float sum = 0;
-  for (int i = 0; i < NX; ++i) {
-    sum += output(i);
+  for (int j = 0; j < NY; ++j) {
+    for (int i = 0; i < NX; ++i) {
+      sum += output(i,j);
+    }
   }
   cout << sum << endl;
 
