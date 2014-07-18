@@ -1,4 +1,4 @@
-all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out
+all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out measure-fma.out
 
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
@@ -40,3 +40,8 @@ blur.out: blur.cpp
 
 bench-blur.out: bench-blur.cpp
 	g++ -O1 bench-blur.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o bench-blur.out
+
+
+measure-fma.out: measure-fma.cpp
+	 clang++ measure-fma.cpp -O3 -ffp-contract=fast -march=bdver2 -S
+	 clang++ measure-fma.cpp -O3 -ffp-contract=fast -march=bdver2 -o measure-fma.out
