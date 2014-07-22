@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         producer.trace_stores();
 
         // And evaluate it over a 5x5 box.
-        printf("\nEvaluating producer-consumer pipeline with default schedule\n");
+        fprintf(stderr,"\nEvaluating producer-consumer pipeline with default schedule\n");
         consumer.realize(4, 4);
 
         // There were no messages about computing values of the
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
                                 sqrt((x+1)*(y+1)));
             }
         }
-        printf("\n");
+        fprintf(stderr,"\n");
     }
 
     // Next we'll examine the next simplest option - computing all
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         producer.trace_stores();
 
         // Compile and run.
-        printf("\nEvaluating producer.compute_root()\n");
+        fprintf(stderr,"\nEvaluating producer.compute_root()\n");
         consumer.realize(4, 4);
 
         // Reading the output we can see that:
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
         consumer.trace_stores();
 
         // Compile and run.
-        printf("\nEvaluating producer.compute_at(consumer, y)\n");
+        fprintf(stderr,"\nEvaluating producer.compute_at(consumer, y)\n");
         consumer.realize(4, 4);
 
         // Reading the log you should see that producer and consumer
@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
         producer.trace_stores();
         consumer.trace_stores();
 
-        printf("\nEvaluating producer.store_root().compute_at(consumer, y)\n");
+        fprintf(stderr,"\nEvaluating producer.store_root().compute_at(consumer, y)\n");
         consumer.realize(4, 4);
 
         // Reading the log you should see that producer and consumer
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
         producer.trace_stores();
         consumer.trace_stores();
 
-        printf("\nEvaluating producer.store_root().compute_at(consumer, x)\n");
+        fprintf(stderr,"\nEvaluating producer.store_root().compute_at(consumer, x)\n");
         consumer.realize(4, 4);
 
         // Reading the log, you should see that producer and consumer
@@ -452,7 +452,7 @@ int main(int argc, char **argv) {
         producer.trace_stores();
         consumer.trace_stores();
 
-        printf("\nEvaluating:\n"
+        fprintf(stderr,"\nEvaluating:\n"
                "consumer.tile(x, y, x_outer, y_outer, x_inner, y_inner, 2, 2);\n"
                "producer.compute_at(consumer, x_outer);\n");
         consumer.realize(4, 4);
@@ -616,7 +616,7 @@ int main(int argc, char **argv) {
                 float error = halide_result(x, y) - c_result[y][x];
                 // It's floating-point math, so we'll allow some slop:
                 if (error < -0.001f || error > 0.001f) {
-                    printf("halide_result(%d, %d) = %f instead of %f\n",
+                    fprintf(stderr,"halide_result(%d, %d) = %f instead of %f\n",
                            x, y, halide_result(x, y), c_result[y][x]);
                     return -1;
                 }
@@ -654,6 +654,6 @@ int main(int argc, char **argv) {
     // trade-offs between locality, redundant work, and parallelism,
     // without messing up the actual result you're trying to compute.
 
-    printf("Success!\n");
+    fprintf(stderr,"Success!\n");
     return 0;
 }

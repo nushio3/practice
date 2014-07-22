@@ -39,7 +39,6 @@ void bench(int NX, int NY, int MAX_T) {
       cell2[i_f](x,y)= (a * inPar(x,y) + b * inPar(clamp(x+1,0,NX-1),y) + b * inPar(clamp(x-1,0,NX-1),y)) ;
     } else {
       cell2[i_f](x,y)= (a * cell3[i_f-1](x,y) + b *  cell3[i_f-1](clamp(x+1,0,NX-1),y) + b * cell3[i_f-1](clamp(x-1,0,NX-1),y)) ;
-      //cell2[i_f](x,y)= 0;
     }
 
     std::cerr << "define cell3-" << i_f << std::endl;    
@@ -52,9 +51,9 @@ void bench(int NX, int NY, int MAX_T) {
   for(int i_f = N_FUSION-1; i_f >=0 ; --i_f) {
     if (i_f==N_FUSION-1)
       cell3[i_f].split(y, yo, yi, NY/64).parallel(yo).vectorize(x,4);
-    else
-      cell3[i_f].store_at(cell2[i_f+1], yo).compute_at(cell2[i_f+1],yi).vectorize(x,4);
-    cell2[i_f].store_at(cell3[i_f], yo).compute_at(cell3[i_f],yi).vectorize(x,4);
+    // else
+    //  cell3[i_f].store_at(cell2[i_f+1], yo).compute_at(cell2[i_f+1],yi).vectorize(x,4);
+    //cell2[i_f].store_at(cell3[i_f], yo).compute_at(cell3[i_f],yi).vectorize(x,4);
   }
 
 

@@ -31,17 +31,17 @@ int main(int argc, char **argv) {
         gradient.trace_stores();
 
         // By default we walk along the rows and then down the columns.
-        printf("Evaluating gradient row-major\n");
+        fprintf(stderr,"Evaluating gradient row-major\n");
         Image<int> output = gradient.realize(4, 4);
 
         // The equivalent C is:
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {
-                printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
     }
 
     // Reorder variables.
@@ -57,16 +57,16 @@ int main(int argc, char **argv) {
         // loop out, so the following call puts y in the inner loop:
         gradient.reorder(y, x);
 
-        printf("Evaluating gradient column-major\n");
+        fprintf(stderr,"Evaluating gradient column-major\n");
         Image<int> output = gradient.realize(4, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int x = 0; x < 4; x++) {
             for (int y = 0; y < 4; y++) {
-                printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
     }
 
     // Split a variable into two.
@@ -90,19 +90,19 @@ int main(int argc, char **argv) {
         // old loop started at a value other than zero, then that is
         // also added within the loops.
 
-        printf("Evaluating gradient with x split into x_outer and x_inner \n");
+        fprintf(stderr,"Evaluating gradient with x split into x_outer and x_inner \n");
         Image<int> output = gradient.realize(4, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y = 0; y < 4; y++) {
             for (int x_outer = 0; x_outer < 2; x_outer++) {
                 for (int x_inner = 0; x_inner < 2; x_inner++) {
                     int x = x_outer * 2 + x_inner;
-                    printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                    fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                 }
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
 
         // Note that the order of evaluation of pixels didn't actually
         // change! Splitting by itself does nothing, but it does open
@@ -124,14 +124,14 @@ int main(int argc, char **argv) {
         Var fused;
         gradient.fuse(x, y, fused);
 
-        printf("Evaluating gradient with x and y fused\n");
+        fprintf(stderr,"Evaluating gradient with x and y fused\n");
         Image<int> output = gradient.realize(4, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int fused = 0; fused < 4*4; fused++) {
             int y = fused / 4;
             int x = fused % 4;
-            printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+            fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
         }
     }
 
@@ -159,22 +159,22 @@ int main(int argc, char **argv) {
         // This pattern is common enough that there's a shorthand for it:
         // gradient.tile(x, y, x_outer, y_outer, x_inner, y_inner, 2, 2);
 
-        printf("Evaluating gradient in 2x2 tiles\n");
+        fprintf(stderr,"Evaluating gradient in 2x2 tiles\n");
         Image<int> output = gradient.realize(4, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y_outer = 0; y_outer < 2; y_outer++) {
             for (int x_outer = 0; x_outer < 2; x_outer++) {
                 for (int y_inner = 0; y_inner < 2; y_inner++) {
                     for (int x_inner = 0; x_inner < 2; x_inner++) {
                         int x = x_outer * 2 + x_inner;
                         int y = y_outer * 2 + y_inner;
-                        printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                        fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                     }
                 }
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
     }
 
     // Evaluating in vectors.
@@ -214,10 +214,10 @@ int main(int argc, char **argv) {
 
         // This time we'll evaluate over an 8x4 box, so that we have
         // more than one vector of work per scanline.
-        printf("Evaluating gradient with x_inner vectorized \n");
+        fprintf(stderr,"Evaluating gradient with x_inner vectorized \n");
         Image<int> output = gradient.realize(8, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y = 0; y < 4; y++) {
             for (int x_outer = 0; x_outer < 2; x_outer++) {
                 // The loop over x_inner has gone away, and has been
@@ -232,13 +232,13 @@ int main(int argc, char **argv) {
                              x_vec[1] + y,
                              x_vec[2] + y,
                              x_vec[3] + y};
-                printf("Evaluating at <%d, %d, %d, %d>, <%d, %d, %d, %d>: <%d, %d, %d, %d>\n",
+                fprintf(stderr,"Evaluating at <%d, %d, %d, %d>, <%d, %d, %d, %d>: <%d, %d, %d, %d>\n",
                        x_vec[0], x_vec[1], x_vec[2], x_vec[3],
                        y, y, y, y,
                        val[0], val[1], val[2], val[3]);
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
     }
 
     // Unrolling a loop.
@@ -260,10 +260,10 @@ int main(int argc, char **argv) {
         // The shorthand for this is:
         // gradient.unroll(x, 2);
 
-        printf("Evaluating gradient unrolled by a factor of two\n");
+        fprintf(stderr,"Evaluating gradient unrolled by a factor of two\n");
         Image<int> result = gradient.realize(4, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y = 0; y < 4; y++) {
             for (int x_outer = 0; x_outer < 2; x_outer++) {
                 // Instead of a for loop over x_inner, we get two
@@ -271,12 +271,12 @@ int main(int argc, char **argv) {
                 {
                     int x_inner = 0;
                     int x = x_outer * 2 + x_inner;
-                    printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                    fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                 }
                 {
                     int x_inner = 1;
                     int x = x_outer * 2 + x_inner;
-                    printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                    fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                 }
             }
         }
@@ -300,10 +300,10 @@ int main(int argc, char **argv) {
         Var x_outer, x_inner;
         gradient.split(x, x_outer, x_inner, 2);
 
-        printf("Evaluating gradient over a 5x4 box with x split by two \n");
+        fprintf(stderr,"Evaluating gradient over a 5x4 box with x split by two \n");
         Image<int> output = gradient.realize(5, 4);
 
-        printf("Equivalent C:\n");
+        fprintf(stderr,"Equivalent C:\n");
         for (int y = 0; y < 4; y++) {
             for (int x_outer = 0; x_outer < 3; x_outer++) { // Now runs from 0 to 3
                 for (int x_inner = 0; x_inner < 2; x_inner++) {
@@ -314,11 +314,11 @@ int main(int argc, char **argv) {
                     // factor).
                     if (x > 3) x = 3;
                     x += x_inner;
-                    printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                    fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                 }
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
 
         // If you read the output, you'll see that some coordinates
         // were evaluated more than once! That's generally OK, because
@@ -373,13 +373,13 @@ int main(int argc, char **argv) {
         //     .parallel(tile_index);
 
 
-        printf("Evaluating gradient tiles in parallel\n");
+        fprintf(stderr,"Evaluating gradient tiles in parallel\n");
         Image<int> output = gradient.realize(4, 4);
 
         // The tiles should occur in arbitrary order, but within each
         // tile the pixels will be traversed in row-major order.
 
-        printf("Equivalent (serial) C:\n");
+        fprintf(stderr,"Equivalent (serial) C:\n");
         // This outermost loop should be a parallel for loop, but that's hard in C.
         for (int tile_index = 0; tile_index < 4; tile_index++) {
             int y_outer = tile_index / 2;
@@ -388,11 +388,11 @@ int main(int argc, char **argv) {
                 for (int x_inner = 0; x_inner < 2; x_inner++) {
                     int y = y_outer * 2 + y_inner;
                     int x = x_outer * 2 + x_inner;
-                    printf("Evaluating at %d, %d: %d\n", x, y, x + y);
+                    fprintf(stderr,"Evaluating at %d, %d: %d\n", x, y, x + y);
                 }
             }
         }
-        printf("\n\n");
+        fprintf(stderr,"\n\n");
     }
 
     // Putting it all together.
@@ -432,7 +432,7 @@ int main(int argc, char **argv) {
         // both in C and Halide and see if the answers match.
         Image<int> result = gradient_fast.realize(800, 600);
 
-        printf("Checking Halide result against equivalent C...\n");
+        fprintf(stderr,"Checking Halide result against equivalent C...\n");
         for (int tile_index = 0; tile_index < 4 * 3; tile_index++) {
             int y_outer = tile_index / 4;
             int x_outer = tile_index % 4;
@@ -459,7 +459,7 @@ int main(int argc, char **argv) {
                         // Check the result.
                         for (int i = 0; i < 4; i++) {
                             if (result(x_vec[i], y_vec[i]) != val[i]) {
-                                printf("There was an error at %d %d!\n", x_vec[i], y_vec[i]);
+                                fprintf(stderr,"There was an error at %d %d!\n", x_vec[i], y_vec[i]);
                                 return -1;
                             }
                         }
@@ -476,7 +476,7 @@ int main(int argc, char **argv) {
                         // Check the result.
                         for (int i = 0; i < 4; i++) {
                             if (result(x_vec[i], y_vec[i]) != val[i]) {
-                                printf("There was an error at %d %d!\n", x_vec[i], y_vec[i]);
+                                fprintf(stderr,"There was an error at %d %d!\n", x_vec[i], y_vec[i]);
                                 return -1;
                             }
                         }
@@ -496,6 +496,6 @@ int main(int argc, char **argv) {
     // hard to debug, and hard to optimize further. This is why Halide
     // exists.
 
-    printf("Success!\n");
+    fprintf(stderr,"Success!\n");
     return 0;
 }
