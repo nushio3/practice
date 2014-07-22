@@ -1,4 +1,4 @@
-all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out flops.out  measure-fma.out ninja-blur.out  stencil-fusion.out blur-step-fusion.out 
+all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out bench-blur.out flops.out  measure-fma.out ninja-blur.out  stencil-fusion.out blur-step-fusion.out 
 
 
 
