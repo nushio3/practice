@@ -337,13 +337,17 @@ class ScholarArticleParser(object):
                        self._tag_has_class(tag2, 'gs_fl'):
                         self._parse_links(tag2)
 
-    def _parse_links(self, span):
+    def _parse_links(self, span,pdfurl=False):
         for tag in span:
             if not hasattr(tag, 'name'):
                 continue
             if tag.name != 'a' or tag.get('href') is None:
                 continue
 
+            if pdfurl and not tag.get('href').startswith('/scholar?') \
+                and not tag.get('href').startswith('#'): 
+				self.article['url_pdf']=self._path2url(tag.get('href'))
+           
             if tag.get('href').startswith('/scholar?cites'):
                 if hasattr(tag, 'string') and tag.string.startswith('Cited by'):
                     self.article['num_citations'] = \
@@ -461,7 +465,7 @@ class ScholarArticleParser120726(ScholarArticleParser):
                 continue
             if str(tag).lower().find('.pdf'):
                 if tag.find('div', {'class': 'gs_ttss'}):
-                    self._parse_links(tag.find('div', {'class': 'gs_ttss'}))
+                    self._parse_links(tag.find('div', {'class': 'gs_ttss'}),pdfurl=True)
 
             if tag.name == 'div' and self._tag_has_class(tag, 'gs_ri'):
                 # There are (at least) two formats here. In the first
@@ -490,8 +494,8 @@ class ScholarArticleParser120726(ScholarArticleParser):
                     atag = tag.h3.a
                     self.article['title'] = ''.join(atag.findAll(text=True))
                     self.article['url'] = self._path2url(atag['href'])
-                    if self.article['url'].endswith('.pdf'):
-                        self.article['url_pdf'] = self.article['url']
+                    #if self.article['url'].endswith('.pdf'):
+                    #    self.article['url_pdf'] = self.article['url']
                 except:
                     # Remove a few spans that have unneeded content (e.g. [CITATION])
                     for span in tag.h3.findAll(name='span'):
@@ -905,6 +909,13 @@ def csv(querier, header=False, sep='|'):
     for art in articles:
         result = art.as_csv(header=header, sep=sep)
         print(encode(result))
+        header = False
+
+def onecsv(querier, header=False, sep='|'):
+    articles = querier.articles
+    for art in articles:
+        result = art.as_csv(header=header, sep=sep)
+        return(encode(result))
         header = False
 
 def citation_export(querier):
