@@ -13,7 +13,9 @@ namespace{
   }
 }
 
-void bench(int NX, int NY, int MAX_T, int N_FUSION) {
+const int N_FUSION = 4;
+
+void bench(int NX, int NY, int MAX_T) {
 
   Halide::Var x("x"),y("y"), yo("yo"), yi("yi"), xo("xo"), xi("xi");
   Halide::Func initial_condition("initial_condition");
@@ -28,15 +30,16 @@ void bench(int NX, int NY, int MAX_T, int N_FUSION) {
 
   // precompile the programs
   const float a = 0.5f, b = 0.25f;
-  std::vector<Halide::Func> cell2(N_FUSION), cell3(N_FUSION);
+  //std::vector<Halide::Func> cell2(N_FUSION), cell3(N_FUSION);
+  Halide::Func cell2[N_FUSION], cell3[N_FUSION];
 
   for(int i_f = 0; i_f < N_FUSION ; ++i_f) {
     std::cerr << "define cell2-" << i_f << std::endl;
     if (i_f==0) {
       cell2[i_f](x,y)= (a * inPar(x,y) + b * inPar(clamp(x+1,0,NX-1),y) + b * inPar(clamp(x-1,0,NX-1),y)) ;
     } else {
-      //cell2[i_f](x,y)= (a * cell3[i_f-1](x,y) + b *  cell3[i_f-1](clamp(x+1,0,NX-1),y) + b * cell3[i_f-1](clamp(x-1,0,NX-1),y)) ;
-      cell2[i_f](x,y)= 0;
+      cell2[i_f](x,y)= (a * cell3[i_f-1](x,y) + b *  cell3[i_f-1](clamp(x+1,0,NX-1),y) + b * cell3[i_f-1](clamp(x-1,0,NX-1),y)) ;
+      //cell2[i_f](x,y)= 0;
     }
 
     std::cerr << "define cell3-" << i_f << std::endl;    
@@ -44,14 +47,15 @@ void bench(int NX, int NY, int MAX_T, int N_FUSION) {
 
   }
 
-  /*
+
+  
   for(int i_f = N_FUSION-1; i_f >=0 ; --i_f) {
     if (i_f==N_FUSION-1)
       cell3[i_f].split(y, yo, yi, NY/64).parallel(yo).vectorize(x,4);
     else
       cell3[i_f].store_at(cell2[i_f+1], yo).compute_at(cell2[i_f+1],yi).vectorize(x,4);
     cell2[i_f].store_at(cell3[i_f], yo).compute_at(cell3[i_f],yi).vectorize(x,4);
-    }*/
+  }
 
 
   
@@ -89,11 +93,8 @@ int main(int argc, char **argv) {
   for (size_t t_max=1; ; t_max*=2) {
     size_t ny = 2<<10;
     size_t nx = 2<<10;
-    // size_t t_max = 2<<16;
-    size_t N_FUSION = 4;
-    
     double t0 = wtime();
-    bench(nx,ny,t_max, N_FUSION);
+    bench(nx,ny,t_max);
     double t1 = wtime();
     double num_flop =  double(nx) * double(ny) * double(t_max) * 10 *  N_FUSION;
     cout << t_max << " " << (t1-t0) << endl;
