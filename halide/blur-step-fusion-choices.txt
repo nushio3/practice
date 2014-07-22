@@ -1,0 +1,50 @@
+Error at ./blur-step-fusion.cpp:67:
+Function "cell2[3]" is computed and stored in the following invalid location:
+cell2[3].compute_inline();
+Legal locations for this function are:
+cell2[3].compute_root();
+cell2[3].store_root().compute_at(cell3[3], __outermost);
+cell2[3].compute_at(cell3[3], __outermost);
+cell2[3].compute_at(cell3[3], nid);
+cell2[3].store_at(cell3[3], nid).compute_at(cell3[3], yi);
+cell2[3].store_at(cell3[3], nid).compute_at(cell3[3], xi);
+cell2[3].store_at(cell3[3], nid).compute_at(cell3[3], v17);
+cell2[3].compute_at(cell3[3], yi);
+cell2[3].store_at(cell3[3], yi).compute_at(cell3[3], xi);
+cell2[3].store_at(cell3[3], yi).compute_at(cell3[3], v17);
+cell2[3].compute_at(cell3[3], xi);
+cell2[3].store_at(cell3[3], xi).compute_at(cell3[3], v17);
+cell2[3].compute_at(cell3[3], v17);
+cell2[3].compute_at(cell3[3], v16);
+
+
+Error at ./blur-step-fusion.cpp:66:
+Function "cell3[2]" is computed and stored in the following invalid location:
+cell3[2].compute_inline();
+Legal locations for this function are:
+cell3[2].compute_root();
+cell3[2].store_root().compute_at(cell3[3], __outermost);
+cell3[2].compute_at(cell3[3], __outermost);
+cell3[2].compute_at(cell3[3], nid);
+cell3[2].store_at(cell3[3], nid).compute_at(cell3[3], yi);
+cell3[2].store_at(cell3[3], nid).compute_at(cell2[3], __outermost);
+cell3[2].store_at(cell3[3], nid).compute_at(cell2[3], y);
+cell3[2].store_at(cell3[3], nid).compute_at(cell2[3], x);
+cell3[2].store_at(cell3[3], nid).compute_at(cell2[3], v19);
+cell3[2].compute_at(cell3[3], yi);
+cell3[2].store_at(cell3[3], yi).compute_at(cell2[3], __outermost);
+cell3[2].store_at(cell3[3], yi).compute_at(cell2[3], y);
+cell3[2].store_at(cell3[3], yi).compute_at(cell2[3], x);
+cell3[2].store_at(cell3[3], yi).compute_at(cell2[3], v19);
+cell3[2].compute_at(cell2[3], __outermost);
+cell3[2].store_at(cell2[3], __outermost).compute_at(cell2[3], y);
+cell3[2].store_at(cell2[3], __outermost).compute_at(cell2[3], x);
+cell3[2].store_at(cell2[3], __outermost).compute_at(cell2[3], v19);
+cell3[2].compute_at(cell2[3], y);
+cell3[2].store_at(cell2[3], y).compute_at(cell2[3], x);
+cell3[2].store_at(cell2[3], y).compute_at(cell2[3], v19);
+cell3[2].compute_at(cell2[3], x);
+cell3[2].store_at(cell2[3], x).compute_at(cell2[3], v19);
+cell3[2].compute_at(cell2[3], v19);
+cell3[2].compute_at(cell2[3], v18);
+

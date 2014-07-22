@@ -13,7 +13,14 @@ namespace{
   }
 }
 
-const int N_FUSION = 4;
+int N_FUSION = 4;
+int CELL3_CHOICE=4; // 0..17
+int CELL2_CHOICE=4; // 0..8
+int N_VECTOR=8;
+int N_UNROLL=4;
+int N_TILE_X=64;
+int N_TILE_Y=64;
+
 
 double bench(int NX, int NY, int MAX_T) {
 
@@ -50,11 +57,47 @@ double bench(int NX, int NY, int MAX_T) {
   Halide::Var nid("nid");
   for(int i_f = N_FUSION-1; i_f >=0 ; --i_f) {
     if (i_f==N_FUSION-1){
-      cell3[i_f].tile(x,y, xo,yo, xi, yi, NX/32,NY/32).fuse(xo,yo,nid).parallel(nid).vectorize(xi,8).unroll(xi,4);
+      cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid).vectorize(xi,N_VECTOR).unroll(xi,N_UNROLL);
     }
-    else
-      cell3[i_f].store_at(cell3[N_FUSION-1],nid).compute_at(cell3[N_FUSION-1], yi).vectorize(x,8).unroll(x,4);
-    cell2[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], yi).vectorize(x,8).unroll(x,4);
+    else{
+      switch(CELL3_CHOICE){
+      case 0 : cell3[i_f].compute_root(); break;
+      case 1 : cell3[i_f].store_root().compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break;
+      case 2 : cell3[i_f].compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break;
+      case 3 : cell3[i_f].compute_at(cell3[N_FUSION-1], nid); break;
+      case 4 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], yi); break;
+      case 5 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 6 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], y); break;
+      case 7 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], x); break;
+      case 8 : cell3[i_f].compute_at(cell3[N_FUSION-1], yi); break;
+      case 9 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 10 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], y); break;
+      case 11 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], x); break;
+      case 12 : cell3[i_f].compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 13 : cell3[i_f].store_at(cell2[N_FUSION-1], Halide::Var::outermost()).compute_at(cell2[N_FUSION-1], y); break;
+      case 14 : cell3[i_f].store_at(cell2[N_FUSION-1], Halide::Var::outermost()).compute_at(cell2[N_FUSION-1], x); break;
+      case 15 : cell3[i_f].compute_at(cell2[N_FUSION-1], y); break;
+      case 16 : cell3[i_f].store_at(cell2[N_FUSION-1], y).compute_at(cell2[N_FUSION-1], x); break;
+      default : cell3[i_f].compute_at(cell2[N_FUSION-1], x); break;
+      }
+
+      cell3[i_f].vectorize(x,N_VECTOR).unroll(x,N_UNROLL);
+    }
+
+    switch(CELL2_CHOICE) {
+    case 0 : cell2[i_f].compute_root(); break; 
+    case 1 : cell2[i_f].store_root().compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break; 
+    case 2 : cell2[i_f].compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break; 
+    case 3 : cell2[i_f].compute_at(cell3[N_FUSION-1], nid); break; 
+    case 4 : cell2[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], yi); break; 
+    case 5 : cell2[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], xi); break; 
+    case 6 : cell2[i_f].compute_at(cell3[N_FUSION-1], yi); break; 
+    case 7 : cell2[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell3[N_FUSION-1], xi); break; 
+    default: cell2[i_f].compute_at(cell3[N_FUSION-1], xi); break; 
+    }
+    
+    cell2[i_f].vectorize(x,N_VECTOR).unroll(x,N_UNROLL);
+
   }
 
 
