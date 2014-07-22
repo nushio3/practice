@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
   Halide::Image<float_t> input = initial_condition.realize(NX,NY); 
   Halide::Image<float_t> output(NX,NY); 
-  
+to_  
 
   // precompile the programs
   Halide::Func cell2, cell3; const float a = 0.5f, b = 0.25f;

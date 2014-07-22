@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 
   {
     ostringstream ossfn;
-    ossfn << "result/"
+    ossfn << "result/B"
 	  << "_f" << N_FUSION 
 	  << "_c" << CELL2_CHOICE
 	  << "_d" << CELL3_CHOICE
