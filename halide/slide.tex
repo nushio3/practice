@@ -374,29 +374,93 @@ $C_\mathrm{blurx} [i,j]$ の要素を計算するが、それを保持してお�
 \end{itemize}
 \end{frame}
 
-\begin{frame}\frametitle{プログラム変換:ループ分割}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-split.png}\end{center}\end{frame}
 
-\begin{frame}\frametitle{プログラム変換:ループ融合}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-fuse.png}\end{center}\end{frame}
 
-\begin{frame}\frametitle{プログラム変換:並列化}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-parallel.png}\end{center}\end{frame}
+\begin{frame}[fragile]\frametitle{プログラム変換:ループ分割}
 
-\begin{frame}\frametitle{プログラム変換:アンロール}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-unroll.png}
+\begin{verbatim}
+Func &split(Var old, Var outer, Var inner, Expr factor);
+\end{verbatim}
 
-\includegraphics[width=11cm]{figure/doc/schedule-unroll2.png}
-\end{center}\end{frame}
+配列変数添字{\tt old}のループアクセスを、
+{\tt outer}と
+{\tt inner}を添字とする二重ループに分割する。
+内側のループ変数{\tt inner}が
+{\tt [0 .. factor-1]}の範囲を動くように分割される。
+\end{frame}
 
-\begin{frame}\frametitle{プログラム変換:ベクトル化}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-vectorize.png}
+\begin{frame}[fragile]\frametitle{プログラム変換:ループ融合}
 
-\includegraphics[width=11cm]{figure/doc/schedule-vectorize2.png}
-\end{center}\end{frame}
 
-\begin{frame}\frametitle{プログラム変換:タイル分割}
-\begin{center}\includegraphics[width=11cm]{figure/doc/schedule-tile.png}\end{center}\end{frame}
+\begin{verbatim}
+Func &fuse(Var inner, Var outer, Var fused);
+\end{verbatim}
+
+{\tt inner}と
+{\tt outer}の二重ループを、
+{\tt fused}を変数とする一重ループに融合する。
+融合された変数の動く範囲の大きさは、もとの二つの変数の範囲の大きさの積になる。
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{プログラム変換:並列化}
+
+\begin{verbatim}
+Func &parallel(Var var);
+\end{verbatim}
+
+変数{\tt var}を並列化。
+{\tt var}の動く範囲の数だけのスレッドを立て(OpenMP)、
+{\tt var}のそれぞれの値を並列に処理する。
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{プログラム変換:アンロール}
+\begin{verbatim}
+Func &unroll(Var var);
+Func &unroll(Var var, int factor);
+\end{verbatim}
+
+変数{\tt var}をアンロール。
+{\tt var}のループを展開して消し、{\tt var}の値のすべての場合を逐次指定した
+長いプログラムに変換する。
+1引数版を使うには、{\tt var}の動く範囲が既知の定数である必要がある。
+2引数版は、{\tt var}のループをサイズ{\tt factor}の内側ループと外側ループに
+{\tt split}した上で内側をアンロールする。
+
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{プログラム変換:ベクトル化}
+\begin{verbatim}
+Func &vectorize(Var var);
+Func &vectorize(Var var, int factor);
+\end{verbatim}
+
+変数{\tt var}をベクトル化。
+{\tt var}のループを無くして{\tt var}の値のすべての場合を一度の
+ベクトル命令で処理する。
+1引数版を使うには、{\tt var}の動く範囲が既知の定数である必要がある。
+2引数版は、{\tt var}のループをサイズ{\tt factor}の内側ループと外側ループに
+{\tt split}した上で内側をベクトル化する。
+ベクトル長{\tt factor}がハードウェア側でサポートされてない場合の挙動は未調査。
+
+
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{プログラム変換:タイル分割}
+
+\begin{verbatim}
+Func &tile(Var x, Var y,
+           Var xo, Var yo,
+           Var xi, Var yi,
+           Expr xfactor, Expr yfactor);
+\end{verbatim}
+
+二つの添字{\tt x}と{\tt y}の二重ループアクセスを、
+サイズ{\tt xfactor} $\times$
+{\tt yfactor} のタイルに分割。
+1つのタイル内をアクセスする添字{\tt xi}と{\tt yi}、および
+タイルたちを参照する添字{\tt xo}と{\tt yo}の
+四重ループに変換する。
+\end{frame}
 
 
 
@@ -465,6 +529,74 @@ C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j
 \includegraphics[width=6cm,angle=270]{figure/result-ef.eps}
 \end{center}
 \end{frame}
+
+\section{Halideを用いた自動チューニング}
+
+
+\begin{frame}\frametitle{サイバーニンジャ計画}
+  
+\end{frame}
+
+
+
+
+\begin{frame}\frametitle{Inter-timestep fusion}
+  拡散方程式のプログラムは計算に比べてとてもメモリ負荷が大きい。
+  理想的な場合でも1 load + 1 store あたり10演算なので、
+  単精度として $0.8~B/F$。
+  これに対し、armagnacの演算帯域比は、
+  \begin{itemize}
+  \item 演算: Opteron${}^\mathrm{(TM)}$ 6376は16コアで、1コアごとに128bit fma演算器が
+    ついており、単精度は32bitで、fmaは2浮動小数演算(flop)ことを考慮すると128bit演算器でクロックあたり8flopこなせるから $\rm 8flop/core/clock \times 16 core/cpu \times 2.6GHz \times 4cpu = 1331.2GFlop/s$
+  \item 帯域: Quad channel DDR3 $\times$ 4ソケットとすると
+  \end{itemize}
+  
+  で、
+  
+  アルゴリズム固有の限界0.8B/Fを超えて転送量を圧縮する方法として、
+  複数の時間刻みを融合する方法が考えられる。$n$ステップを融合できれば、
+  理想的な演算帯域比は
+   $0.8n~B/F$に近づけられるものと思われる。
+
+\end{frame}
+
+
+\begin{frame}\frametitle{チューニングパラメータの種別}
+  Halideの生成するコードを制御するパラメータには以下のような種類がある。
+  \begin{enumerate}
+  \item  {\bf Loop option}ループ分割、融合、タイリングといったループの個数にまつわる選択肢(整数パラメータの個数を増やす可能性がある)
+  \item  {\bf Timing option} 計算タイミング、ストアタイミングといった整数パラメータの個数を変えない選択肢
+  \item  {\bf Int option}: ベクトル長、アンロール長といった整数パラメータの選択肢
+  \item  {\bf User option}: Inter-timestep fusionのような、配列変数の数を変えてしまうような変換
+    (Halideのscheduleの範囲に収まらないプログラム変換)
+  \end{enumerate}
+\end{frame}
+  
+\begin{frame}\frametitle{チューニングパラメータの種別}  
+  Halideにおいてユーザが記述するC++プログラムは実際の数値計算プログラムのドライバに過ぎない。したがって、以上の選択肢はすべてC++の普通の値として表現すればよく、Halideを用いたプログラム実行速度最適化は、あたかもC++の普通の多引数関数の探索問題のように書くことができる。。
+
+  今回、Loop optionは固定とする。Timing optionはswitch文で選択。
+\end{frame}
+
+
+\begin{frame}\frametitle{}
+
+\end{frame}
+
+\begin{frame}\frametitle{チューニングパラメータの種別}
+  Halideの生成するコードを制御するパラメータには以下のような種類がある。
+  \begin{itemize}
+  \item  ループ分割、融合、タイリングといった個別の選択肢
+  \item  ベクトル長、アンロール長といった整数パラメータ
+  \item  Inter-timestep fusionのような、配列変数の数を変えてしまうような変換
+    (Halideのscheduleの範囲に収まらないプログラム変換)
+  \end{itemize}
+
+
+\end{frame}
+
+
+
 
 \begin{frame}[allowframebreaks]{参考文献}{}
   \bibliographystyle{apalike}
