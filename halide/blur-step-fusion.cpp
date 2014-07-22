@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <stdlib.h>
 #include <sys/time.h>
+
+using namespace std;
 
 namespace{
   double wtime() {
@@ -14,8 +17,8 @@ namespace{
 }
 
 int N_FUSION = 4;
-int CELL3_CHOICE=4; // 0..17
 int CELL2_CHOICE=4; // 0..8
+int CELL3_CHOICE=4; // 0..17
 int N_VECTOR=8;
 int N_UNROLL=4;
 int N_TILE_X=64;
@@ -144,35 +147,57 @@ double bench(int NX, int NY, int MAX_T) {
 }
 
 
+int irand(int hi){
+  return (rand()/(RAND_MAX/hi))%hi;
+}
 
 int main(int argc, char **argv) {
-  using std::cout;
-  using std::cerr;
-  using std::endl;
-  // uisng std::endl;
+  srand(time(NULL));
+  size_t nx = 1024;
+  size_t ny = 1024;
 
 
-  for (size_t t_max=256; ; t_max*=2) {
-    size_t ny = 2<<10;
-    size_t nx = 2<<10;
-    double deltaT = bench(nx,ny,t_max/N_FUSION);
-    double num_flop =  double(nx) * double(ny) * double(t_max) * 10 ;
-    cout << t_max << " " << deltaT << endl;
-    cout << (num_flop / deltaT/1e9) <<  " GFlops" << endl;
+  N_FUSION = 1<<irand(6);
+  CELL2_CHOICE=irand(9); // 0..8
+  CELL3_CHOICE=irand(18); // 0..17
+  N_VECTOR=1<<irand(4);
+  N_UNROLL=1<<irand(6);
+  N_TILE_X=1<<irand(10);
+  N_TILE_Y=1<<irand(10);
+
+  
+
+  double deltaT = bench(nx,ny,1);
+  if (deltaT > 20) return 0;
+  
+  
+
+  {
+    ostringstream ossfn;
+    ossfn << "result/"
+	  << "_f" << N_FUSION 
+	  << "_c" << CELL2_CHOICE
+	  << "_d" << CELL3_CHOICE
+	  << "_v" << N_VECTOR
+	  << "_u" << N_UNROLL
+	  << "_tx"<<  N_TILE_X
+	  << "_ty"<<  N_TILE_Y << ".txt";
+    ofstream ofs(ossfn.str().c_str());
+
+    for (nx=1024;nx<=4096;nx*=2){
+      ny = nx;
+      for (size_t t_max=256; t_max < 10000; t_max*=2) {
+	ostringstream msg;
+	deltaT = bench(nx,ny,t_max/N_FUSION);
+	double num_flop =  double(nx) * double(ny) * double(t_max) * 10 ;
+	msg << (num_flop / deltaT/1e9) <<  " GFlops " ;
+	msg << nx << " " << ny << " " ;
+	msg << t_max << " " << deltaT << " ";
+	
+	cerr << msg.str() << endl;
+	ofs << msg.str() << endl;
+      }
+    }
   }
 
-
-//  for (size_t ny = 16; ny < (2<<15); ny*=2) {
-//    for (size_t nx = 16; nx < (2<<15); nx*=2) {
-//      if (nx*ny >= (2<<28)) continue;
-//
-//      for (size_t t_max = 1; t_max <= 1000;t_max *= 10) {
-//	
-//	double t0 = wtime();
-//	bench(nx,ny,t_max);
-//	double t1 = wtime();
-//	cout << nx << " " << ny << " " << t_max << " " << (t1-t0) << std::endl;
-//      }
-//    }
-//  }
 }
