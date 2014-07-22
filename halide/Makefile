@@ -1,4 +1,4 @@
-all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out flops.out  measure-fma.out
+all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out flops.out  measure-fma.out blur-step-fusion.out
 
 
 slide.pdf:slide.tex
@@ -50,3 +50,6 @@ measure-fma.out: measure-fma.cpp
 flops.out: flops.cpp
 	g++ flops.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o flops.out
 
+
+blur-step-fusion.out: blur-step-fusion.cpp
+	g++ blur-step-fusion.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o blur-step-fusion.out
