@@ -1,4 +1,5 @@
-all:   lesson01.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out flops.out  measure-fma.out blur-step-fusion.out
+all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out blur.out bench-blur.out flops.out  measure-fma.out blur-step-fusion.out
+
 
 
 slide.pdf:slide.tex
@@ -12,6 +13,13 @@ lesson01.out: lesson01.cpp
 #	g++ lesson01.cpp -I Halide/include/
 #       to execute, create symbolic-link of the Halide folder and set
 #	LD_LIBRARY_PATH=Halide/bin ./lesson_01
+
+lesson05.out: lesson05.cpp
+	g++ lesson05.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o lesson05.out
+
+lesson08.out: lesson08.cpp
+	g++ lesson08.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o lesson08.out
+
 
 game-of-life.out: game-of-life.cpp
 	g++ game-of-life.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -o game-of-life.out
