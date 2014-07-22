@@ -223,8 +223,6 @@ int main(int argc, char **argv) {
   srand(time(NULL));
   for(;;) {
     reset_params();    for (N_FUSION	=1;N_FUSION    <64;N_FUSION    *=2)  main2();
-    reset_params();    for (CELL2_CHOICE=1;CELL2_CHOICE<9 ;CELL2_CHOICE*=2)  main2();
-    reset_params();    for (CELL3_CHOICE=1;CELL3_CHOICE<18;CELL3_CHOICE*=2)  main2();
     reset_params();    for (N_VECTOR	=1;N_VECTOR    <32;N_VECTOR    *=2)  main2();
     reset_params();    for (N_UNROLL	=1;N_UNROLL    <65;N_UNROLL    *=2)  main2();
     reset_params();    for (N_TILE_X	=1;N_TILE_X    <1024;N_TILE_X    *=2)  main2();
