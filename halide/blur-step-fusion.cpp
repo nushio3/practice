@@ -222,11 +222,11 @@ int main2(){
 int main(int argc, char **argv) {
   srand(time(NULL));
   for(;;) {
-    reset_params();    for (N_FUSION	=1;N_FUSION    <64;N_FUSION    *=2)  main2();
-    reset_params();    for (N_VECTOR	=1;N_VECTOR    <32;N_VECTOR    *=2)  main2();
-    reset_params();    for (N_UNROLL	=1;N_UNROLL    <65;N_UNROLL    *=2)  main2();
+    reset_params();    for (N_VECTOR	=1;N_VECTOR    <32  ;N_VECTOR    *=2)  main2();
+    reset_params();    for (N_UNROLL	=1;N_UNROLL    <65  ;N_UNROLL    *=2)  main2();
     reset_params();    for (N_TILE_X	=1;N_TILE_X    <1024;N_TILE_X    *=2)  main2();
     reset_params();    for (N_TILE_Y    =1;N_TILE_Y    <1024;N_TILE_Y    *=2)  main2();
+    reset_params();    for (N_FUSION	=1;N_FUSION    <=8  ;N_FUSION    *=2)  main2();
 
 
     
