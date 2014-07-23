@@ -593,15 +593,15 @@ cell3[2].compute_at(cell3[3], v128);
   \begin{itemize}
   \item 演算: Opteron${}^\mathrm{(TM)}$ 6376は16コアで、1コアごとに128bit fma演算器が
     ついており、単精度は32bitで、fmaは2浮動小数演算(flop)ことを考慮すると128bit演算器でクロックあたり8flopこなせるから $\rm 8flop/core/clock \times 16 core/cpu \times 2.6GHz \times 4cpu = 1331.2GFlop/s$
-  \item 帯域: Quad channel DDR3 1600 $\times$ 4ソケットとすると
+  \item 帯域: 200GB/s (4 $\times$ 50GB/s)
   \end{itemize}
   
-  で、
+  とすると、$0.15~B/F$でどうしても足りない。
   
   アルゴリズム固有の限界0.8B/Fを超えて転送量を圧縮する方法として、
   複数の時間刻みを融合する方法が考えられる。$n$ステップを融合できれば、
   理想的な演算帯域比は
-   $0.8n~B/F$に近づけられるものと思われる。
+   $0.8/n~B/F$に近づけられるものと思われる。
 
 \end{frame}
 
@@ -785,7 +785,8 @@ int N_TILE_Y=64;    // [1..512] Int option    : タイルバッファのサイ�
 
 \begin{frame}\frametitle{Halideの自動性能探索まとめ}
 \begin{itemize}
-\item 
+\item Halideが生成するコードはなぜか整数命令が多すぎる
+\item イントリンシックを並べるのがよいです。
 \item 明日前田先生に会いにいきます＠東京
 \end{itemize}
 
