@@ -229,7 +229,7 @@ $ less blur.s
 \end{verbatim}
 \endgroup
 
-これはGrape-Xのようなfmaをサポートするハードウェア向けのコード生成にも流用できると思われる。
+これは将来のfmaをサポートするハードウェア向けのコード生成にも流用できると思われる。
 
 
 \end{frame}
@@ -533,11 +533,44 @@ C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j
 \section{Halideを用いた自動チューニング}
 
 
-\begin{frame}\frametitle{サイバーニンジャ計画}
-  
+\begin{frame}\frametitle{マシンニンジャ計画}
+  Halideは、ステンシル計算を定義した上で様々なスケジュールを適用することで、生成プログラムの性能を様々にいじくれる、と主張していた。
+
+  しかし、私がHalideのスケジュールの意味をよく理解していなかったのと、誤ったスケジュール(配列の範囲外アクセスなど)を設定してしまうとコード生成タイミングで実行時エラーになってしまい原因究明が困難であったことから、自由なスケジュール設定ができなかった。
+
+  ところが、私がHalideのチュートリアルを全部追ったこと、およびHalideが、（ここ数日のバージョンアップで）無効なスケジュールを検出すると「有効なスケジュールの一覧」を出力するようになったことから、実行時エラーで落ちないスケジュールを自在に設定できるようになった。
+
+  そこで、Halideのスケジュール空間を自動探索するプログラムを書いて走らせた(7月22日17:00〜)。
 \end{frame}
 
 
+\begin{frame}[fragile]\frametitle{Halideのスケジュールエラーメッセージの例}
+
+無効なスケジュールを与えてしまった場合、Halideプログラムの実行時(コード生成時)に以下のようなエラーメッセージが出力される。
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+Function "cell3[2]" is computed and stored in the following invalid location:
+cell3[2].compute_inline();
+Legal locations for this function are:
+cell3[2].compute_root();
+cell3[2].store_root().compute_at(cell3[3], __outermost);
+cell3[2].compute_at(cell3[3], __outermost);
+cell3[2].compute_at(cell3[3], nid);
+cell3[2].store_at(cell3[3], nid).compute_at(cell3[3], yi);
+cell3[2].store_at(cell3[3], nid).compute_at(cell3[3], xi);
+cell3[2].store_at(cell3[3], nid).compute_at(cell3[3], v129);
+cell3[2].compute_at(cell3[3], yi);
+cell3[2].store_at(cell3[3], yi).compute_at(cell3[3], xi);
+cell3[2].store_at(cell3[3], yi).compute_at(cell3[3], v129);
+cell3[2].compute_at(cell3[3], xi);
+cell3[2].store_at(cell3[3], xi).compute_at(cell3[3], v129);
+cell3[2].compute_at(cell3[3], v129);
+cell3[2].compute_at(cell3[3], v128);
+\end{verbatim}
+\endgroup
+
+\end{frame}
 
 
 \begin{frame}\frametitle{Inter-timestep fusion}
@@ -548,7 +581,7 @@ C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j
   \begin{itemize}
   \item 演算: Opteron${}^\mathrm{(TM)}$ 6376は16コアで、1コアごとに128bit fma演算器が
     ついており、単精度は32bitで、fmaは2浮動小数演算(flop)ことを考慮すると128bit演算器でクロックあたり8flopこなせるから $\rm 8flop/core/clock \times 16 core/cpu \times 2.6GHz \times 4cpu = 1331.2GFlop/s$
-  \item 帯域: Quad channel DDR3 $\times$ 4ソケットとすると
+  \item 帯域: Quad channel DDR3 1600 $\times$ 4ソケットとすると
   \end{itemize}
   
   で、
@@ -564,34 +597,165 @@ C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j
 \begin{frame}\frametitle{チューニングパラメータの種別}
   Halideの生成するコードを制御するパラメータには以下のような種類がある。
   \begin{enumerate}
+  \item  {\bf User option}: Inter-timestep fusionのような、配列変数の数を変えてしまうような変換
   \item  {\bf Loop option}ループ分割、融合、タイリングといったループの個数にまつわる選択肢(整数パラメータの個数を増やす可能性がある)
   \item  {\bf Timing option} 計算タイミング、ストアタイミングといった整数パラメータの個数を変えない選択肢
   \item  {\bf Int option}: ベクトル長、アンロール長といった整数パラメータの選択肢
-  \item  {\bf User option}: Inter-timestep fusionのような、配列変数の数を変えてしまうような変換
     (Halideのscheduleの範囲に収まらないプログラム変換)
   \end{enumerate}
 \end{frame}
   
 \begin{frame}\frametitle{チューニングパラメータの種別}  
-  Halideにおいてユーザが記述するC++プログラムは実際の数値計算プログラムのドライバに過ぎない。したがって、以上の選択肢はすべてC++の普通の値として表現すればよく、Halideを用いたプログラム実行速度最適化は、あたかもC++の普通の多引数関数の探索問題のように書くことができる。。
+  Halideにおいてユーザが記述するC++プログラムは実際の数値計算プログラムの生成・実行ドライバに過ぎない。したがって、以上の選択肢はすべてC++の普通の値として表現すればよく、Halideを用いたプログラム実行速度最適化は、あたかもC++の普通の多引数関数の探索問題のように書くことができる。
 
-  今回、Loop optionは固定とする。Timing optionはswitch文で選択。
+  今回、User optionとしてはinter-timestep fusionの段数、Loop optionは固定とする。Timing optionはswitch文で選択。各種Int optionも探索する。
 \end{frame}
 
 
-\begin{frame}\frametitle{}
+\begin{frame}[fragile]\frametitle{オプションの列挙}
+
+Halideプログラムはコードジェネレータなので、チューニングオプションはすべて通常の変数でよい。
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+int N_FUSION = 4;   // User option
+int CELL2_CHOICE=4; // [0..8] Timing option
+int CELL3_CHOICE=4; // [0..17] Timing option
+int N_VECTOR=8;     // Int option
+int N_UNROLL=4;     // Int option
+int N_TILE_X=64;    // Int option
+int N_TILE_Y=64;    // Int option
+\end{verbatim}
+\endgroup
 
 \end{frame}
 
-\begin{frame}\frametitle{チューニングパラメータの種別}
-  Halideの生成するコードを制御するパラメータには以下のような種類がある。
-  \begin{itemize}
-  \item  ループ分割、融合、タイリングといった個別の選択肢
-  \item  ベクトル長、アンロール長といった整数パラメータ
-  \item  Inter-timestep fusionのような、配列変数の数を変えてしまうような変換
-    (Halideのscheduleの範囲に収まらないプログラム変換)
-  \end{itemize}
 
+\begin{frame}[fragile]\frametitle{Inter-timestep fusionの実装}
+
+{\tt N\_FUSION}段の時間ステップを融合するこうどなぷろぐらむも、ただのFor文として書ける。
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+  Halide::Func cell2[N_FUSION], cell3[N_FUSION];
+
+  for(int i_f = 0; i_f < N_FUSION ; ++i_f) {
+    if (i_f==0) {
+      cell2[i_f](x,y)=a * inPar(x,y) + b * inPar(x+1,y) + b * inPar(x-1,y) ;
+    } else {
+      cell2[i_f](x,y)=a * cell3[i_f-1](x,y) + b *  cell3[i_f-1](x+1,y) + b * cell3[i_f-1](x-1,y);
+    }
+    cell3[i_f](x,y)= a * cell2[i_f](x,y) + b * cell2[i_f](x,y+1) + b * cell2[i_f](x,y-1) ;
+  }
+\end{verbatim}
+\endgroup
+\end{frame}
+
+
+
+\begin{frame}[fragile]\frametitle{Timing optionの列挙}
+
+先述のスケジュール無効メッセージから置換により生成したswitch文。
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+    switch(CELL2_CHOICE) {
+    case 0 : cell2[i_f].compute_root(); break; 
+    case 1 : cell2[i_f].store_root().compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break; 
+    case 2 : cell2[i_f].compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break; 
+    case 3 : cell2[i_f].compute_at(cell3[N_FUSION-1], nid); break; 
+    case 4 : cell2[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], yi); break; 
+    case 5 : cell2[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], xi); break; 
+    case 6 : cell2[i_f].compute_at(cell3[N_FUSION-1], yi); break; 
+    case 7 : cell2[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell3[N_FUSION-1], xi); break; 
+    default: cell2[i_f].compute_at(cell3[N_FUSION-1], xi); break; 
+    }
+
+    cell2[i_f].vectorize(x,N_VECTOR).unroll(x,N_UNROLL);
+\end{verbatim}
+\endgroup
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{}
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+      switch(CELL3_CHOICE){
+      case 0 : cell3[i_f].compute_root(); break;
+      case 1 : cell3[i_f].store_root().compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break;
+      case 2 : cell3[i_f].compute_at(cell3[N_FUSION-1], Halide::Var::outermost()); break;
+      case 3 : cell3[i_f].compute_at(cell3[N_FUSION-1], nid); break;
+      case 4 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell3[N_FUSION-1], yi); break;
+      case 5 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 6 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], y); break;
+      case 7 : cell3[i_f].store_at(cell3[N_FUSION-1], nid).compute_at(cell2[N_FUSION-1], x); break;
+      case 8 : cell3[i_f].compute_at(cell3[N_FUSION-1], yi); break;
+      case 9 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 10 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], y); break;
+      case 11 : cell3[i_f].store_at(cell3[N_FUSION-1], yi).compute_at(cell2[N_FUSION-1], x); break;
+      case 12 : cell3[i_f].compute_at(cell2[N_FUSION-1], Halide::Var::outermost()); break;
+      case 13 : cell3[i_f].store_at(cell2[N_FUSION-1], Halide::Var::outermost()).compute_at(cell2[N_FUSION-1], y); break;
+      case 14 : cell3[i_f].store_at(cell2[N_FUSION-1], Halide::Var::outermost()).compute_at(cell2[N_FUSION-1], x); break;
+      case 15 : cell3[i_f].compute_at(cell2[N_FUSION-1], y); break;
+      case 16 : cell3[i_f].store_at(cell2[N_FUSION-1], y).compute_at(cell2[N_FUSION-1], x); break;
+      default : cell3[i_f].compute_at(cell2[N_FUSION-1], x); break;
+      }
+
+      cell3[i_f].vectorize(x,N_VECTOR).unroll(x,N_UNROLL);
+\end{verbatim} 
+\endgroup
+\end{frame}
+
+
+\begin{frame}[fragile]\frametitle{Halideのスケジュール空間探索まとめ}
+
+Loop optionの設定
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y) // タイル分割
+          .fuse(xo,yo,nid) // タイルを識別する外側添字はx,yまとめてナンバリング
+          .parallel(nid)   // そのタイルごとに並列化
+          .vectorize(xi,N_VECTOR) // 再内側添字xiはまずN_VECTOR個づつベクトル化
+          .unroll(xi,N_UNROLL);   // さらにN_UNROLL個づつアンロール
+\end{verbatim}
+\endgroup
+
+User optionとInt option
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+int N_FUSION = 4;   // [1..32]  User option   : Inter-timestep fusionの段数
+int CELL2_CHOICE=4; // [0..8]   Timing option : cell2(y差分)のタイミング
+int CELL3_CHOICE=4; // [0..17]  Timing option : cell3(x差分)のタイミング
+int N_VECTOR=8;     // [1..8]   Int option    : マシンベクトル長
+int N_UNROLL=4;     // [1..32]  Int option    : アンロール段数
+int N_TILE_X=64;    // [1..512] Int option    : タイルバッファのサイズ(x)
+int N_TILE_Y=64;    // [1..512] Int option    : タイルバッファのサイズ(y)
+\end{verbatim}
+\endgroup
+
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+[全オプションを]
+↓
+\end{verbatim}
+\endgroup
+\end{frame}
+
+
+\begin{frame}[fragile]\frametitle{}
+\begingroup \fontsize{8pt}{9pt}\selectfont
+\begin{verbatim}
+
+\end{verbatim}
+\endgroup
+\end{frame}
+
+\begin{frame}\frametitle{Halideの自動性能探索まとめ}
+\begin{itemize}
+\item 
+\item 明日前田先生に会いにいきます＠東京
+\end{itemize}
 
 \end{frame}
 
@@ -639,13 +803,11 @@ C_\mathrm{out} [i,j] &=& \frac{1}{3}\left(C_\mathrm{2}[i,j-1] + C_\mathrm{2}[i,j
 
 
 \begin{frame}[fragile]\frametitle{}
-\begingroup
-    \fontsize{8pt}{9pt}\selectfont
+\begingroup \fontsize{8pt}{9pt}\selectfont
 \begin{verbatim}
 subroutine kernel__velderiv()
 \end{verbatim}
 \endgroup
-\vspace{-1cm}
 \end{frame}
 
 
