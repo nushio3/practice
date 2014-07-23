@@ -24,6 +24,14 @@ int N_UNROLL=4;
 int N_TILE_X=64;
 int N_TILE_Y=64;
 
+int N_FUSION_0= 4;
+int CELL2_CHOICE_0=4; // 0..8
+int CELL3_CHOICE_0=4; // 0..17
+int N_VECTOR_0=8;
+int N_UNROLL_0=4;
+int N_TILE_X_0=64;
+int N_TILE_Y_0=64;
+
 
 double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
 
@@ -157,30 +165,31 @@ int irand(int hi){
   return (rand()/(RAND_MAX/hi))%hi;
 }
 
-int main(int argc, char **argv) {
-  srand(time(NULL));
+void reset_params(){
+  
+  N_FUSION =         N_FUSION_0 ;		   
+  CELL2_CHOICE =     CELL2_CHOICE_0 ;	   
+  CELL3_CHOICE =     CELL3_CHOICE_0 ;	   
+  N_VECTOR = 	       N_VECTOR_0 ; 	   
+  N_UNROLL = 	       N_UNROLL_0 ; 	   
+  N_TILE_X = 	       N_TILE_X_0 ; 	   
+  N_TILE_Y =         N_TILE_Y_0 ;           
+}
+
+
+
+int main2(){
+
   size_t nx = 1024;
   size_t ny = 1024;
-
-  /*
-  N_FUSION = 1<<irand(6);
-  CELL2_CHOICE=irand(9); // 0..8
-  CELL3_CHOICE=irand(18); // 0..17
-  N_VECTOR=1<<irand(4);
-  N_UNROLL=1<<irand(6);
-  N_TILE_X=1<<irand(10);
-  N_TILE_Y=1<<irand(10);
-  */
-  
 
   double deltaT = bench(true,nx,ny,1);
   if (deltaT > 20) return 0;
   
-  
 
   {
     ostringstream ossfn;
-    ossfn << "result/B"
+    ossfn << "result/C"
 	  << "_f" << N_FUSION 
 	  << "_c" << CELL2_CHOICE
 	  << "_d" << CELL3_CHOICE
@@ -188,22 +197,52 @@ int main(int argc, char **argv) {
 	  << "_u" << N_UNROLL
 	  << "_tx"<<  N_TILE_X
 	  << "_ty"<<  N_TILE_Y << ".txt";
-    ofstream ofs(ossfn.str().c_str());
+    ofstream ofs(ossfn.str().c_str(), std::ofstream::out | std::ofstream::app);
 
     for (nx=1024;nx<=4096;nx*=2){
       ny = nx;
       for (size_t t_max=256; t_max < 10000; t_max*=2) {
+	if(nx>1024)t_max=8192;
 	ostringstream msg;
 	deltaT = bench(false, nx,ny,t_max/N_FUSION);
 	double num_flop =  double(nx) * double(ny) * double(t_max) * 10 ;
 	msg << (num_flop / deltaT/1e9) <<  " GFlops " ;
 	msg << nx << " " << ny << " " ;
-	msg << t_max << " " << deltaT << " ";
+	msg << t_max << " " << deltaT << "\t";
+	msg << " " << N_FUSION 
+	    << " " << CELL2_CHOICE
+	    << " " << CELL3_CHOICE
+	    << " " << N_VECTOR
+	    << " " << N_UNROLL
+	    << " "<<  N_TILE_X
+	    << " "<<  N_TILE_Y;
 	
 	cerr << msg.str() << endl;
 	ofs << msg.str() << endl;
       }
     }
   }
+  
+}
 
+int main(int argc, char **argv) {
+  srand(time(NULL));
+  for(;;) {
+    reset_params();    for (N_VECTOR	=1;N_VECTOR    <32  ;N_VECTOR    *=2)  main2();
+    reset_params();    for (N_UNROLL	=1;N_UNROLL    <65  ;N_UNROLL    *=2)  main2();
+    reset_params();    for (N_TILE_X	=1;N_TILE_X    <1024;N_TILE_X    *=2)  main2();
+    reset_params();    for (N_TILE_Y    =1;N_TILE_Y    <1024;N_TILE_Y    *=2)  main2();
+    reset_params();    for (N_FUSION	=1;N_FUSION    <=8  ;N_FUSION    *=2)  main2();
+
+
+    
+
+    N_FUSION_0=1<<irand(6);
+    CELL2_CHOICE_0=irand(9);
+    CELL3_CHOICE_0=irand(18);
+    N_VECTOR_0	=1<<irand(6);
+    N_UNROLL_0	=1<<irand(7);
+    N_TILE_X_0	=1<<irand(10);
+    N_TILE_Y_0    =1<<irand(10);
+  }
 }
