@@ -228,15 +228,6 @@ int main2(){
 int main(int argc, char **argv) {
   srand(time(NULL));
   for(;;) {
-    reset_params();    for (N_VECTOR	=1;N_VECTOR    <32  ;N_VECTOR    *=2)  main2();
-    reset_params();    for (N_UNROLL	=1;N_UNROLL    <65  ;N_UNROLL    *=2)  main2();
-    reset_params();    for (N_TILE_X	=1;N_TILE_X    <1024;N_TILE_X    *=2)  main2();
-    reset_params();    for (N_TILE_Y    =1;N_TILE_Y    <1024;N_TILE_Y    *=2)  main2();
-    reset_params();    for (N_FUSION	=1;N_FUSION    <=8  ;N_FUSION    *=2)  main2();
-
-
-    
-
     N_FUSION_0=1<<irand(6);
     CELL2_CHOICE_0=irand(9);
     CELL3_CHOICE_0=irand(18);
@@ -244,5 +235,13 @@ int main(int argc, char **argv) {
     N_UNROLL_0	=1<<irand(7);
     N_TILE_X_0	=1<<irand(10);
     N_TILE_Y_0    =1<<irand(10);
+
+
+    reset_params();    for (N_VECTOR	=1;N_VECTOR    <32  ;N_VECTOR    *=2)  main2();
+    reset_params();    for (N_UNROLL	=1;N_UNROLL    <65  ;N_UNROLL    *=2)  main2();
+    int nvu = N_VECTOR * N_UNROLL;
+    reset_params();    for (N_TILE_X  =nvu;N_TILE_X    <1024;N_TILE_X    *=2)  main2();
+    reset_params();    for (N_TILE_Y    =1;N_TILE_Y    <1024;N_TILE_Y    *=2)  main2();
+    reset_params();    for (N_FUSION	=1;N_FUSION    <=8  ;N_FUSION    *=2)  main2();
   }
 }
