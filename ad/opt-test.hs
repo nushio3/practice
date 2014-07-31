@@ -2,36 +2,49 @@ module Main where
 
 import Data.IORef
 import Numeric.Optimization.Algorithms.CMAES
+import System.IO
 
-f :: IORef Int -> IORef [(Int,Double)] -> [Double] -> IO Double
-f tR logR xs = do 
-  t <- readIORef tR
+import Data.Time
+
+f :: IORef Int -> Handle -> [Double] -> IO Double
+f tR h xs = do 
   modifyIORef tR succ
-  modifyIORef logR ([(t,x)|x<-xs]  ++)
+  t <- readIORef tR
+  -- hPutStr h $ unlines [ unwords[show t, show v] | v <- xs]  
+  -- hFlush h
+  return $ sum (zipWith sep xs (tail xs))
+    + sum (map well xs)
+    -- + sum (map grid xs)  
   
-  
-  return $ sum (map grid xs) + sum (map well xs) + sum (zipWith sep xs (tail xs))
-  
-grid :: Double -> Double
-grid x = 0.01 * (1-cos(x*(2*pi)))
-
-sep ::  Double -> Double -> Double 
-sep x y = max 0  $ x - y + 1
-
-well :: Double -> Double
-well x = max 0 (negate x) + max 0 (x - (n  - 1))
-
-n :: Double
-n = 12 -- fromIntegral $ length xs
+  where 
+    grid :: Double -> Double
+    grid x = 0.001 * (1-cos(x*(2*pi)))
+    
+    sep ::  Double -> Double -> Double 
+    sep x y = max 0  $ x - y + 1
+    
+    well :: Double -> Double
+    well x = max 0 (negate x) + max 0 (x - (n  - 1))
+    
+    n :: Double
+    n = fromIntegral $ length xs
     
     
 main :: IO ()
-main = do
+main = mapM_ benchmark $ concat $map (replicate 5) [2..]
+
+benchmark :: Int -> IO ()
+benchmark n = do
+  t1 <- getCurrentTime
   tR <- newIORef (0::Int)
-  plotLogR <- newIORef ([] :: [(Int, Double)])
-  xs0 <- run $ (minimizeIO (f tR plotLogR) $ replicate 12 0){sigma0=10}
-  print xs0
-  print =<< (f tR plotLogR) xs0
-  plotLog <- fmap reverse $ readIORef plotLogR
-  writeFile "plot.log" $ unlines [ unwords[show t, show v] | (t,v)<-plotLog]
+  h <- openFile "/dev/null" WriteMode
+  xs0 <- run $ (minimizeIO (f tR h) $ replicate n 0){sigma0=fromIntegral n}
+  print =<< (f tR stdout) xs0
+  t2 <- getCurrentTime
+  hl <- openFile "benchmark.txt" AppendMode
+  hClose h
+  hPutStrLn hl $ unwords [show n, show $ diffUTCTime t2 t1]
+  hClose hl
+  
+  
   
