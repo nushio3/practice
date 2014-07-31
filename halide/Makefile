@@ -1,4 +1,4 @@
-all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out bench-blur.out flops.out  measure-fma.out ninja-blur.out  stencil-fusion.out blur-step-fusion.out 
+all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out bench-blur.out flops.out  measure-fma.out ninja-blur.out  stencil-fusion.out blur-step-fusion.out bsf-2.out
 
 
 
@@ -71,3 +71,6 @@ stencil-fusion.out: stencil-fusion.cpp
 
 blur-step-fusion.out: blur-step-fusion.cpp
 	g++ blur-step-fusion.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o blur-step-fusion.out
+
+bsf-2.out: bsf-2.cpp
+	g++ bsf-2.cpp -g -I Halide/include/ -L Halide/bin/ -lHalide -lpthread -ldl -o bsf-2.out
