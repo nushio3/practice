@@ -1,11 +1,15 @@
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
 import Text.Printf
 
-class Formula a where
+import Control.Applicative
 
-data Eqn a = Eqn String a
-  deriving (Eq, Show, Ord)
+data Eqn a = Eqn {eqnRep :: String, runEqn :: a}
+  deriving (Eq, Show, Ord, Functor)
+
+instance Applicative Eqn where
+  pure x = Eqn "" x
+  (Eqn fs f) <*> (Eqn xs x) = Eqn (printf "%s(%s)" fs xs) (f x)
 
 
 instance Num a => Num (Eqn a) where
@@ -32,14 +36,16 @@ solarSpeed :: Eqn Double
 solarSpeed = Eqn "Vsun" 1.5e8
   
 kinNrgF :: (Fractional a) => Eqn a -> Eqn a -> Eqn a  
-kinNrgF m v = 0.5 * m * v^2 
+kinNrgF m v = 0.5 * m * v ^ 2
 
 kinNrg :: (Fractional a) => a -> a -> a
-kinNrg m v = kinNrgF (Eqn "m" m) (Eqn "v" v)
+kinNrg m v = runEqn $ kinNrgF (pure m) (pure v)
 
 
 solarNrg = kinNrgF solarMass solarSpeed
 
 main :: IO ()  
 main = do
-  print $ solarNrg
+  putStrLn $ "Kinetic energy is: " ++ (eqnRep $ solarNrg) ++ "\t(1)"
+  putStrLn $ "Therefore, kinetic energy of the sun is: "
+  print $ runEqn $ solarNrg
