@@ -41,6 +41,9 @@ kinNrgF m v = 0.5 * m * v ^ 2
 kinNrg :: (Fractional a) => a -> a -> a
 kinNrg m v = runEqn $ kinNrgF (pure m) (pure v)
 
+kinNrgS :: String -> String -> String
+kinNrgS = 
+
 
 solarNrg = kinNrgF solarMass solarSpeed
 
