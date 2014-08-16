@@ -22,6 +22,9 @@ instance Biapplicative (Expr False) where
   bipure s a = ERep s
   ef <<*>> es = ERep (fromERep ef $ fromERep es)
 
+
+
+
 instance Num a => Num (Expr True s a) where
   Expr a1 + Expr a2 = Expr (a1 + a2)
   Expr a1 * Expr a2 = Expr (a1 * a2)
@@ -31,23 +34,28 @@ instance (IsString s, Monoid s) => Num (Expr False s a) where
   ERep s1 * ERep s2 = ERep (s1 <> "*" <> s2)
 
 
+class CanParen a where
+  paren :: a -> a
 
-paren :: (IsString s, Monoid s) => Expr b s a ->  Expr b s a 
-paren (Expr a) = Expr a
-paren (ERep s) = ERep $ "(" <> s <> ")"
+instance (IsString s, Monoid s) => CanParen (Expr False s a) where
+  paren (ERep s) = ERep $ "(" <> s <> ")"
+  
+instance CanParen (Expr True s a) where                 
+  paren (Expr a) = Expr a
 
-momentumX :: (Num (Expr b s a)) => Expr b s a ->  Expr b s a  ->  Expr b s a 
-momentumX mass vel = mass * vel
+
+momentumX :: (IsString s, Monoid s, Num (Expr b s a)) => Expr b s a ->  Expr b s a  ->  Expr b s a 
+momentumX mass vel = paren (mass * vel)
 
 momentumE :: forall a. Num a => a -> a -> a
-momentumE m v = fromExpr $ momentumX (Expr m) (Expr v)
+momentumE m v = fromExpr $ momentumX (Expr m) (Expr v :: Expr True String a)
 
 momentumR :: String -> String -> String
 momentumR m v = fromERep $ momentumX (ERep m) (ERep v)
 
 
-solarMass :: Expr b String Double
-solarMass = bipure "Msun" 2.0e33
+-- solarMass :: Expr b String Double
+-- solarMass = bipure "Msun" 2.0e33
 
 main :: IO ()
 main = do
