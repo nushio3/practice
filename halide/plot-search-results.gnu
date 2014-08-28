@@ -1,4 +1,4 @@
-set term postscript enhanced solid color 20
+set term postscript enhanced solid color 30
 
 set grid
 set log x

@@ -3,6 +3,7 @@ module Main where
 import Data.IORef
 import Numeric.Optimization.Algorithms.CMAES
 import System.IO
+import System.Environment
 
 import Data.Time
 
@@ -10,8 +11,8 @@ f :: IORef Int -> Handle -> [Double] -> IO Double
 f tR h xs = do 
   modifyIORef tR succ
   t <- readIORef tR
-  -- hPutStr h $ unlines [ unwords[show t, show v] | v <- xs]  
-  -- hFlush h
+  hPutStr h $ unlines [ unwords[show t, show v] | v <- xs]  
+  hFlush h
   return $ sum (zipWith sep xs (tail xs))
     + sum (map well xs)
     -- + sum (map grid xs)  
@@ -31,13 +32,17 @@ f tR h xs = do
     
     
 main :: IO ()
-main = mapM_ benchmark $ concat $map (replicate 5) [2..]
+main = do
+  argv <- getArgs
+  case argv of
+    [nstr] -> benchmark $ read nstr
+    _ -> mapM_ benchmark $ concat $map (replicate 5) [2..]
 
 benchmark :: Int -> IO ()
 benchmark n = do
   t1 <- getCurrentTime
   tR <- newIORef (0::Int)
-  h <- openFile "/dev/null" WriteMode
+  h <- openFile "history.txt" WriteMode
   xs0 <- run $ (minimizeIO (f tR h) $ replicate n 0){sigma0=fromIntegral n}
   print =<< (f tR stdout) xs0
   t2 <- getCurrentTime

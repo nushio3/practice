@@ -1,6 +1,10 @@
 all:   lesson01.out lesson05.out lesson08.out game-of-life.out loop.out gpu.out loop-1.out loop-2.out double-buffer.out bench-blur.out flops.out  measure-fma.out ninja-blur.out  stencil-fusion.out blur-step-fusion.out bsf-2.out
 
 
+asm:
+	clang++ -O2 -march=core-avx2 -ffp-contract=fast generated-bsf-1.c -S
+	clang++ -O2 -march=core-avx2 -ffp-contract=fast generated-bsf-2.c -S
+
 
 slide.pdf:slide.tex
 	platex --shell-escape slide.tex
