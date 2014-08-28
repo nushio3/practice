@@ -51,3 +51,7 @@ plot "< cat result/E_*.txt" u (($12*$13)/($14*$15)):1 pt 7 t ''
 set out 'figure/bsf_unroll.eps'
 set xlabel 'unroll number'
 plot "< cat result/E_*.txt" u 11:1 pt 7 t ''
+
+set out 'figure/bsf_interstep_fusion.eps'
+set xlabel 'number of fused timesteps'
+plot "< cat result/E_*.txt" u 7:1 pt 7 t ''

@@ -13,7 +13,7 @@ set xlabel 'vector length'
 plot "< cat result/C_*.txt" u 10:1 pt 7 t ''
 
 set out 'figure/bench_fusion.eps'
-set xlabel 'fusion step number'
+set xlabel 'number of fused timesteps'
 plot "< cat result/C_*.txt" u 7:1 pt 7 t ''
 
 set out 'figure/bench_ulen.eps'
