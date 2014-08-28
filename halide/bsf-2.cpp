@@ -210,13 +210,16 @@ int main2(){
 
 int main(int argc, char **argv) {
   srand(time(NULL));
-  for(N_TILE_Y=1024;N_TILE_Y>1;N_TILE_Y/=2) {
-    N_TILE_X=N_TILE_Y;
-    for(N_TILE_XI=32;N_TILE_XI<=N_TILE_X;N_TILE_XI*=2) {
-      N_TILE_YI=N_TILE_XI;
-      main2();
-      
-      
-    }
+  for(;;) {
+    N_TILE_X=1<<irand(11);
+    N_TILE_Y=1<<irand(11);
+    N_TILE_XI=1<<irand(10);
+    N_TILE_YI=1<<irand(10);
+    N_UNROLL=1+irand(16);
+    N_FUSION=1+irand(8);
+    if(N_TILE_X < N_VECTOR*N_UNROLL) continue;
+    if(N_TILE_XI >= N_TILE_X) continue;
+    if(N_TILE_YI >= N_TILE_Y) continue;
+    main2();
   }
 }
