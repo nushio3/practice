@@ -12,6 +12,7 @@ dim = 10
 
 score :: [Double] -> Double
 score xs = sum $ map (**2) $ zipWith (-) xs [0..fromIntegral dim-1]
+-- score xs = sum $ zipWith (*) xs [0..fromIntegral dim-1]
 
 main :: IO ()
 main = forever $ do
@@ -19,9 +20,9 @@ main = forever $ do
   print cand
   tmpl <- T.readFile "train-template.rb"
   let mapStr = intercalate "," $
-        ( printf "'a' => %f" (sum $ map (**2) cand)
-        : printf "'c' => 1"
-        : zipWith (printf "'b%02d' => %f") [(0 :: Int)..] cand)
+        ( printf "'a' => %f" ((/100) $ sum $ map (**2) cand):
+          printf "'c' => 1" :
+          zipWith (printf "'b%d' => %f") [(0 :: Int)..] cand)
       script2 = T.replace "MAP_HERE" (T.pack mapStr) $ 
                 T.replace "SCORE_HERE" (T.pack $ show $ score cand ) tmpl
   T.writeFile "train.rb" script2
