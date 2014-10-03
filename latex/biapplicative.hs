@@ -8,6 +8,9 @@ data Expr (b :: Bool) s a where
   ERep :: { fromERep :: s } -> Expr False s a
   Expr :: { fromExpr :: a } -> Expr True s a
 
+data AST a where
+  Add :: Num a => a -> a -> AST a
+
 instance Bifunctor (Expr True) where
   bimap _ f (Expr a) = Expr (f a)
 instance Bifunctor (Expr False) where
