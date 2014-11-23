@@ -16,7 +16,7 @@ namespace{
   }
 }
 
-int N_FUSION = 4;
+int N_FUSION = 3;
 int CELL2_CHOICE=0; // 0..8
 int CELL3_CHOICE=0; // 0..17
 int N_VECTOR=8;
@@ -107,7 +107,10 @@ double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
   if(is_c_gen){
     std::vector<Halide::Argument> arg_vect;
     arg_vect.push_back(Halide::Argument("inPar", true, Halide::Int(32)));
-    cell3[N_FUSION-1].compile_to_c("generated-bsf-2.c", arg_vect, "main_compute");
+    std::ostringstream fn_str;
+    fn_str << "generated-bsf-NF_" << N_FUSION << ".c";
+    
+    cell3[N_FUSION-1].compile_to_c(fn_str.str().c_str(), arg_vect, "main_compute");
   }
 
 
