@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 using namespace std;
 typedef int int32_t;
 //typedef int int64_t;
@@ -10,7 +11,14 @@ int _921=0;
 int sdiv(int x, int y){return x/y;}
 int mod(int x, int y){return x%y;}
 
+
+int irand(int hi){
+  return (int(rand()/(double(RAND_MAX)/hi)))%hi;
+}
+
+
 int main(){
+  srand(time(NULL));
   int _f5_s0_x_xo_nid = 0;
   int _f5_s0_y_yi_yi = 0;
   int _f5_s0_x_xi_xi = 0;
@@ -31,29 +39,17 @@ int main(){
   
   const int32_t _inPar_min_0 = 0;
   const int32_t _inPar_min_1 = 0;
-  const int32_t _inPar_min_2 = 0;
-  const int32_t _inPar_min_3 = 0;
-  const int32_t _inPar_extent_0 = 10000;
-  const int32_t _inPar_extent_1 = 10000;
-  const int32_t _inPar_extent_2 = 10000;
-  const int32_t _inPar_extent_3 = 10000;
-  const int32_t _inPar_stride_0 = 4;
-  const int32_t _inPar_stride_1 = 4;
-  const int32_t _inPar_stride_2 = 4;
-  const int32_t _inPar_stride_3 = 4;
+  const int32_t _inPar_extent_0 = irand(100000);
+  const int32_t _inPar_extent_1 = irand(100000);
+  const int32_t _inPar_stride_0 = irand(1000);
+  const int32_t _inPar_stride_1 = irand(100);
   const int32_t _inPar_elem_size = 4;
-  const int32_t _f5_min_0 = 10;
-  const int32_t _f5_min_1 = 10;
-  const int32_t _f5_min_2 = 10;
-  const int32_t _f5_min_3 = 10;
-  const int32_t _f5_extent_0 =6400;
-  const int32_t _f5_extent_1 =6400;
-  const int32_t _f5_extent_2 =6400;
-  const int32_t _f5_extent_3 =6400;
-  const int32_t _f5_stride_0 = 80;
-  const int32_t _f5_stride_1 = 80;
-  const int32_t _f5_stride_2 = 80;
-  const int32_t _f5_stride_3 = 80;
+  const int32_t _f5_min_0 = irand(100);
+  const int32_t _f5_min_1 = irand(100);
+  const int32_t _f5_extent_0 = irand(80000);
+  const int32_t _f5_extent_1 = irand(80000);
+  const int32_t _f5_stride_0 = irand(10000);
+  const int32_t _f5_stride_1 = irand(1000);
   const int32_t _f5_elem_size = 4;
   int32_t _0 = _f5_min_1 + _f5_extent_1;
   int32_t _1 = _0 + -1;
@@ -1630,7 +1626,18 @@ int main(){
   int32_t _1785 = _1763 + _1784;
   int32_t _1786 = _1785 + 3;
 
-
+  // f0
+  cout << _999 <<  " x " << _1002 << endl;
+  // f3
+  cout << _1125 <<  " x " << _1128 << endl;
+  // f1
+  cout << _1266 << " x " <<  _1269 << endl;
+  // f4
+  cout << _1392 <<  " x " <<  _1395 << endl;
+  // f2
+  cout << _1533 <<  " x " <<  1 << endl;
+  
+  /*
   // f0
   cout << _412/32 <<  " x " << _980 << endl;
   // f3
@@ -1641,7 +1648,7 @@ int main(){
   cout << _835/32 <<  " x " <<  _883 << endl;
   // f2
   cout << _868/32 <<  " x " <<  _883 << endl;
-
+  */
 }
 
 

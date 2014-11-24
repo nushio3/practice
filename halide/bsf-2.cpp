@@ -16,7 +16,7 @@ namespace{
   }
 }
 
-int N_FUSION = 3;
+int N_FUSION = 4;
 int CELL2_CHOICE=0; // 0..8
 int CELL3_CHOICE=0; // 0..17
 int N_VECTOR=8;
@@ -76,23 +76,23 @@ double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
       cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);
       cell3[i_f].tile(xi,yi, xii, yii, N_TILE_XI, N_TILE_YI);
       if (not is_c_gen) cell3[i_f].vectorize(xii,N_VECTOR);
-      cell3[i_f].unroll(xii,N_UNROLL);
+      //cell3[i_f].unroll(xii,N_UNROLL);
 
     }
     else{
       //cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);
-      cell3[i_f].store_at(cell3[N_FUSION-1], xi).compute_at(cell3[N_FUSION-1], xii);
+      //xxxx cell3[i_f].store_at(cell3[N_FUSION-1], xo).compute_at(cell3[N_FUSION-1], xii);
       if (not is_c_gen) cell3[i_f].vectorize(x,N_VECTOR);
-      cell3[i_f].unroll(x,N_UNROLL);
+      //xxxx cell3[i_f].unroll(x,N_UNROLL);
 
     }
 
 
     //cell2[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);    
-    cell2[i_f].store_at(cell3[N_FUSION-1], xi).compute_at(cell3[N_FUSION-1], xii);
+    //xxxx cell2[i_f].store_at(cell3[N_FUSION-1], xo).compute_at(cell3[N_FUSION-1], xii);
 
     if (not is_c_gen) cell2[i_f].vectorize(x,N_VECTOR);
-    cell2[i_f].unroll(x,N_UNROLL);
+    //xxxx cell2[i_f].unroll(x,N_UNROLL);
 
   }
 
