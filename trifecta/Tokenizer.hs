@@ -2,6 +2,7 @@ module Tokenizer where
 
 import Control.Applicative
 import Text.Trifecta
+import Text.PrettyPrint.ANSI.Leijen as Pretty hiding (line, (<>), (<$>), empty)
 import System.Environment
 
 varHeadChar :: Parser Char
@@ -33,10 +34,7 @@ statement :: Parser Statement
 statement = do
   lhs <- varName
   reserved "="
+  pos <- position
   rhs <- varName
   many $ reserved ";"
-  return (lhs,rhs)
-
-main = do
-    (fileName:_ ) <- getArgs
-    parseTest (program <* eof) =<< readFile fileName
+  return (lhs,rhs ++ "@" ++ show pos)
