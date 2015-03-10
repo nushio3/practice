@@ -1,0 +1,567 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=Shift_JIS">
+<title>(How to Write a (Lisp) Interpreter (in Python))</title>
+<link href="lisp-in-python_files/prettify.css" type="text/css" rel="stylesheet"> 
+<script type="text/javascript" src="lisp-in-python_files/prettify.js"></script> 
+<link href="lisp-in-python_files/loading.css" rel="stylesheet"></head>
+<body onload="prettyPrint()" style="max-width: 49em">
+<h1>(How to Write a (Lisp) Interpreter (in Python))</h1>
+
+This page has two purposes: to describe how to implement computer
+language interpreters in general, and in particular to show how to
+implement a subset of the <a href="http://en.wikipedia.org/wiki/Scheme_%28programming_language%29"><i>Scheme</i></a>
+dialect of Lisp using <a href="http://python.org/">Python</a>. I call my language and interpreter <i>Lispy</i> (<a href="http://norvig.com/lis.py"><b>lis.py</b></a>). Years ago, I showed how to write a <a href="http://norvig.com/jscheme.html">Scheme interpreter in Java</a> as well as one <a href="http://books.google.com/books?id=QzGuHnDhvZIC&amp;lpg=PA756&amp;vq=scheme%20interpreter&amp;dq=Paradigms%20of%20Artificial%20Intelligence%20Programming&amp;pg=PA753#v=onepage&amp;q&amp;f=false">in Common
+Lisp</a>.  This time around the goal is to demonstrate, as concisely
+and accessibly as possible, what
+<a href="http://queue.acm.org/detail.cfm?id=1039523">Alan Kay called</a> <i>"Maxwell's Equations of Software."</i> 
+
+<p>Why does this  matter? As <a href="http://steve-yegge.blogspot.com/2007/06/rich-programmer-food.html">Steve
+  Yegge said</a>, <i>"If you don't know how compilers work, then you
+  don't know how computers work."</i> Yegge describes 8 problems that
+  can be solved with compilers (or equally with interpreters, or
+   with Yegge's
+  typical heavy dosage of cynicism).
+
+
+</p><h2>Syntax and Semantics of Scheme Programs</h2>
+
+The <i>syntax</i> of a language is the arrangement of characters to form correct statements or expressions; the
+<i>semantics</i> is the meaning of those statements or expressions.  For example, in the language of
+mathematical expressions (and in many programming languages), the syntax for adding one plus two is "1 +
+2" and the semantics is the application of the addition operator to the two numbers, yielding the value 3. We say we
+are <i>evaluating</i> an expression when we determine its
+value; we would say that "1 + 2" evaluates to 3, and write
+that as "1 + 2" ⇒ 3.
+
+<p>Scheme syntax is different from most other languages you may be familiar with. Consider:
+
+
+</p><blockquote>
+<table border="0" cellpadding="3" cellspacing="0"><tbody><tr><th style="background-color:#EEEEEE">Java</th><th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th><th style="background-color:#EEEEEE">Scheme
+    </th></tr><tr><td>
+</td></tr><tr><td style="background-color:#EEEEEE">
+<tt>if (x.val() &gt; 0) {
+<br>&nbsp;&nbsp;fn(A[i] + 1, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new String[] {"one", "two"});
+<br>}
+  </tt></td><td>&nbsp;
+  </td><td style="background-color:#EEEEEE" valign="top"><tt>(if (&gt; (val x) 0)
+    <br>&nbsp;&nbsp;&nbsp;&nbsp;(fn (+ (aref A i) 1) 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(quote (one two)))
+   </tt></td></tr></tbody></table>
+</blockquote>
+
+Java has a wide variety
+of syntactic conventions (keywords, infix operators, brackets,
+operator precedence, dot notation, quotes, commas,
+semicolons, etc.), but Scheme syntax is much simpler: 
+<ul>
+<li> Scheme programs consist solely of <i>expressions</i>.  There is no statement/expression distinction.
+</li><li> Numbers (e.g. <tt>1</tt>) and symbols (e.g. <tt>A</tt>) are called <i>atomic expressions</i>;
+they cannot be broken into pieces.  These are similar to their Java counterparts, except that in
+Scheme, <tt>+</tt> and <tt>&lt;</tt> and the like are symbols, exactly like <tt>A</tt>.
+</li><li> Everything else is a <i>list expression</i>. A list is a "(", followed by zero or more expressions,
+followed by a ")".  The first element of the list determines what it means.
+</li><li>A list expression starting with a keyword, e.g. <tt>(if ...)</tt>, is known as a <i>special form</i>;
+we will see how each special form is interpreted.
+</li><li>A list starting with a non-keyword, e.g. <tt>(fn ...)</tt>, is a function call.
+</li></ul>
+The beauty of Scheme is that the full language only needs six basic special
+forms.  (In comparison, Python has <a href="https://docs.python.org/3/reference/grammar.html">110 syntactic forms</a>
+and Java has <a href="https://docs.oracle.com/javase/specs/jls/se7/html/jls-18.html">133</a>.)
+Using parentheses for everything
+may seem unfamiliar, but it has the virtues of
+simplicity and consistency. (Some have joked that "Lisp" stands for
+"<a href="http://www.google.com/search?q=Lots+of+Irritating+Silly+Parentheses"><i>Lots
+of Irritating Silly Parentheses</i></a>"; I think it stand for
+"<a href="http://www.google.com/search?hl=en&amp;as_q=&amp;as_epq=Lisp+Is+Syntactically+Pure"><i>Lisp
+Is Syntactically Pure</i></a>".)  
+
+
+<p>In this page we will cover all the important points of Scheme
+(omitting some minor details), but we will take two steps to get there.  
+
+</p><h2>Language 1: Lispy Calculator</h2>
+
+Step one is to define a language I call <i>Lispy Calculator</i> that is a
+ subset of Scheme using only three of the six special forms.
+Lispy Calculator lets you do any computation you could do on a typical 
+calculator―as long as you are comfortable with prefix notation. 
+And you can do some things that are not offered in typical calculator 
+languages: "if" expressions, and the definition of new variables, for 
+example.  Here is a table of all the allowable expressions in the Lispy 
+Calculator language:
+
+<p>
+<table border="1" cellpadding="3" cellspacing="0">
+  <tbody><tr style="background-color:#EEEEEE"><th>Expression</th><th width="23%">Syntax</th><th>Semantics and Example
+
+  </th></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1">variable reference</a></td><td><i>var</i></td><td>A symbol is interpreted as a variable name;
+  its value is the variable's
+  value. <br>Example: <tt>r</tt> ⇒ <tt>10</tt> (assuming <tt>r</tt> was previously defined to be 10)
+
+    </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2">constant
+  literal</a></td><td><i>number</i></td><td>A number 
+  evaluates to itself. <br>Examples: <tt>12 ⇒ 12</tt> <i>or</i>
+  <tt>-3.45e+6 ⇒ -3.45e+6</tt>
+
+          </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2">quotation</a></td><td><tt>(quote </tt><i>exp</i><tt>)</tt></td><td>
+Return the <i>exp</i> literally; do not evaluate it. <br>Example:
+	<tt>(quote (+ 1 2)) ⇒ (+ 1 2)</tt> 
+
+      </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5">conditional</a></td><td><tt>(if</tt> <i>test conseq
+  alt</i><tt>) </tt></td><td>Evaluate <i>test</i>; if true,
+  evaluate and return <i>conseq</i>; otherwise  
+  <i>alt</i>. <br>Example: <tt>(if (&gt; 10 20) (+ 1 1) (+ 3 3)) ⇒ 6</tt>
+    
+
+    </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2">definition</a>
+</td><td><tt>(define</tt> <i>var</i> <i>exp</i><tt>)</tt>
+</td><td>Define a new variable and give it
+  the value of evaluating the expression <i>exp</i>. 
+      <br>Examples: <tt>(define r 10)</tt> 
+      
+</td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3">procedure
+   call</a></td><td><tt>(</tt><i>proc arg...</i><tt>)</tt>	</td><td>If <i>proc</i> is
+   anything other than one of the symbols <tt>if,  define,
+   </tt> or <tt>quote</tt> then it is treated as a procedure.  Evaluate <i>proc</i>
+   and all the <i>args</i>, and then the procedure is applied to the list of <i>arg</i> values. <br>Example: <tt>(sqrt (* 2 8)) ⇒ 4.0</tt>
+  
+   </td></tr></tbody></table>
+
+   
+
+  </p><p>In the Syntax column of this table, <i>var</i> must be a
+   symbol,
+   <i>number</i> must be an integer or floating point number,
+   and the other italicized words can be any
+   expression. The notation <i>arg...</i> means zero or more repetitions
+   of <i>arg</i>.
+   
+
+
+
+
+</p><h2>What A Language Interpreter Does</h2>
+
+A language interpreter has two parts:
+<ol>
+
+  <li> <b>Parsing:</b> The parsing component takes an input program in
+the form of a sequence of characters, verifies it according to the
+<i>syntactic rules</i> of the language, and translates the program
+into an internal representation.  In a simple interpreter the internal
+representation is a tree structure (often called an <i>abstract syntax tree</i>) 
+that closely mirrors the nested
+structure of statements or expressions in the program. In a language
+translator called a <i>compiler</i> there is often a series of internal representations,
+starting with an abstract syntax tree, and progressing to a
+sequence of instructions that can be directly executed by the
+computer. The Lispy parser is implemented with the function <tt>parse</tt>.<p>
+
+  </p></li><li> <b>Execution:</b> The internal representation is then
+  processed according to the <i>semantic rules</i> of the
+  language, thereby carrying out the computation. Lispy's execution function is called <tt>eval</tt> (note this shadows
+  Python's built-in function of the same name).
+  
+</li></ol>
+
+Here is a picture of the interpretation process:
+
+<blockquote>program (str) &#10145; <span style="border: 2px solid; padding: 4px"><tt>parse</tt></span>
+&#10145; abstract syntax tree (list)
+&#10145; <span style="border: 2px solid; padding: 4px"><tt>eval</tt></span>
+&#10145; result (object)
+</blockquote>
+
+<p>And here is a short example of what we want <tt>parse</tt> and <tt>eval</tt> to be able to do:
+
+</p><pre class="prettyprint">&gt;&gt;<span class="pln"> program </span><span class="pun">=</span><span class="pln"> </span><span class="str">"(begin (define r 10) (* pi (* r r)))"</span><span class="pln"><br><br></span>&gt;&gt;&gt;<span class="pln"> parse</span><span class="pun">(</span><span class="pln">program</span><span class="pun">)</span><span class="pln"><br></span><span class="pun">[</span><span class="str">'begin'</span><span class="pun">,</span><span class="pln"> </span><span class="pun">[</span><span class="str">'define'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="lit">10</span><span class="pun">],</span><span class="pln"> </span><span class="pun">[</span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'pi'</span><span class="pun">,</span><span class="pln"> </span><span class="pun">[</span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">]]]</span><span class="pln"><br><br></span>&gt;&gt;&gt;<span class="pln"> eval</span><span class="pun">(</span><span class="pln">parse</span><span class="pun">(</span><span class="pln">program</span><span class="pun">))</span><span class="pln"><br></span><span class="lit">314</span><span class="pun">.</span><span class="lit">1592653589793</span></pre>
+
+<h2>Parsing: <tt>parse</tt>, <tt>tokenize</tt> and <tt>read_from_tokens</tt></h2>
+
+
+Parsing is traditionally separated into two parts: <i>lexical
+analysis</i>, in which the input character string is broken up into a
+sequence of <i>tokens</i>, and <i>syntactic analysis</i>, in which the
+tokens are assembled into an abstract syntax tree.  
+The Lispy tokens are parentheses, symbols, and numbers.
+There are
+many tools for lexical analysis (such as Mike Lesk and Eric Schmidt's
+<a href="http://dinosaur.compilertools.net/#lex">lex</a>), but we'll
+use a very simple tool: Python's <tt>str.split</tt>. The function <tt>tokenize</tt> takes
+as input a string of characters; it
+adds spaces around each paren, and then calls <tt>str.split</tt> to get a
+list of tokens:
+
+<pre class="prettyprint "><span class="kwd">def</span><span class="pln"> tokenize</span><span class="pun">(</span><span class="pln">chars</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Convert a string of characters into a list of tokens."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> chars</span><span class="pun">.</span><span class="pln">replace</span><span class="pun">(</span><span class="str">'('</span><span class="pun">,</span><span class="pln"> </span><span class="str">' ( '</span><span class="pun">).</span><span class="pln">replace</span><span class="pun">(</span><span class="str">')'</span><span class="pun">,</span><span class="pln"> </span><span class="str">' ) '</span><span class="pun">).</span><span class="pln">split</span><span class="pun">()</span></pre>
+
+<pre class="prettyprint">&gt;&gt;&gt;<span class="pln"> program </span><span class="pun">=</span><span class="pln"> </span><span class="str">"(begin (define r 10) (* pi (* r r)))"</span><span class="pln"><br></span>&gt;&gt;&gt;<span class="pln"> tokenize</span><span class="pun">(</span><span class="pln">program</span><span class="pun">)</span><span class="pln"><br></span><span class="pun">[</span><span class="str">'('</span><span class="pun">,</span><span class="pln"> </span><span class="str">'begin'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'('</span><span class="pun">,</span><span class="pln"> </span><span class="str">'define'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'10'</span><span class="pun">,</span><span class="pln"> </span><span class="str">')'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'('</span><span class="pun">,</span><span class="pln"> </span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'pi'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'('</span><span class="pun">,</span><span class="pln"> </span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="str">')'</span><span class="pun">,</span><span class="pln"> </span><span class="str">')'</span><span class="pun">,</span><span class="pln"> </span><span class="str">')'</span><span class="pun">]</span></pre>
+
+
+<p>Our function <tt>parse</tt> will take a string representation of a program as input, call <tt>tokenize</tt>
+to get a list of tokens, and then call <tt>read_from_tokens</tt> to assemble an abstract syntax tree.
+<tt>read_from_tokens</tt> looks at the first token; if
+it is a <tt>')'</tt> that's a syntax error. If it is a <tt>'('</tt>, then we start
+building up a list of sub-expressions until we hit a matching <tt>')'</tt>.
+Any non-parenthesis token must be a symbol or number. 
+We'll let Python make the distinction between them: for each non-paren token,
+first try to interpret it as an int, then as a float, and finally as a
+symbol. Here is the parser:
+
+</p><pre class="prettyprint "><span class="kwd">def</span><span class="pln"> parse</span><span class="pun">(</span><span class="pln">program</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Read a Scheme expression from a string."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> read_from_tokens</span><span class="pun">(</span><span class="pln">tokenize</span><span class="pun">(</span><span class="pln">program</span><span class="pun">))</span><span class="pln"><br><br></span><span class="kwd">def</span><span class="pln"> read_from_tokens</span><span class="pun">(</span><span class="pln">tokens</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Read an expression from a sequence of tokens."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> len</span><span class="pun">(</span><span class="pln">tokens</span><span class="pun">)</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="lit">0</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">raise</span><span class="pln"> </span><span class="typ">SyntaxError</span><span class="pun">(</span><span class="str">'unexpected EOF while reading'</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; token </span><span class="pun">=</span><span class="pln"> tokens</span><span class="pun">.</span><span class="pln">pop</span><span class="pun">(</span><span class="lit">0</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> </span><span class="str">'('</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> token</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; L </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[]</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">while</span><span class="pln"> tokens</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">!=</span><span class="pln"> </span><span class="str">')'</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; L</span><span class="pun">.</span><span class="pln">append</span><span class="pun">(</span><span class="pln">read_from_tokens</span><span class="pun">(</span><span class="pln">tokens</span><span class="pun">))</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; tokens</span><span class="pun">.</span><span class="pln">pop</span><span class="pun">(</span><span class="lit">0</span><span class="pun">)</span><span class="pln"> </span><span class="com"># pop off ')'</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> L<br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> </span><span class="str">')'</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> token</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">raise</span><span class="pln"> </span><span class="typ">SyntaxError</span><span class="pun">(</span><span class="str">'unexpected )'</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">else</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> atom</span><span class="pun">(</span><span class="pln">token</span><span class="pun">)</span><span class="pln"><br><br></span><span class="kwd">def</span><span class="pln"> atom</span><span class="pun">(</span><span class="pln">token</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Numbers become numbers; every other token is a symbol."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">try</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">int</span><span class="pun">(</span><span class="pln">token</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">except</span><span class="pln"> </span><span class="typ">ValueError</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">try</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">float</span><span class="pun">(</span><span class="pln">token</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">except</span><span class="pln"> </span><span class="typ">ValueError</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Symbol</span><span class="pun">(</span><span class="pln">token</span><span class="pun">)</span></pre>
+
+
+<tt>parse</tt> works like this:
+
+<pre class="prettyprint">&gt;&gt;&gt;<span class="pln"> program </span><span class="pun">=</span><span class="pln"> </span><span class="str">"(begin (define r 10) (* pi (* r r)))"</span><span class="pln"><br><br></span>&gt;&gt;&gt;<span class="pln"> parse</span><span class="pun">(</span><span class="pln">program</span><span class="pun">)</span><span class="pln"><br></span><span class="pun">[</span><span class="str">'begin'</span><span class="pun">,</span><span class="pln"> </span><span class="pun">[</span><span class="str">'define'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="lit">10</span><span class="pun">],</span><span class="pln"> </span><span class="pun">[</span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'pi'</span><span class="pun">,</span><span class="pln"> </span><span class="pun">[</span><span class="str">'*'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'r'</span><span class="pun">]]]</span></pre>
+
+We have made some choices about the representation of Scheme objects.
+Here we make the choices explicit:
+
+<pre class="prettyprint"><span class="typ">Symbol</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> str &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># A Scheme Symbol is implemented as a Python str</span><span class="pln"><br></span><span class="typ">List</span><span class="pln"> &nbsp; </span><span class="pun">=</span><span class="pln"> list &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># A Scheme List is implemented as a Python list</span><span class="pln"><br></span><span class="typ">Number</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">int</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">float</span><span class="pun">)</span><span class="pln"> </span><span class="com"># A Scheme Number is implemented as a Python int or float</span></pre>
+
+ 
+We're almost ready to define <tt>eval</tt>. But we need one more concept first.
+
+<h2>Environments</h2>
+
+The function <tt>eval</tt> takes two arguments:  an expression, <tt>x</tt>, that we want to evaluate,
+and an environment, <tt>env</tt>, in which to evaluate it. An <i>environment</i> is a mapping from variable names to their values.
+By default, <tt>eval</tt> will use a global environent that includes the names for a bunch of standard things (like the functions <tt>max</tt> 
+and <tt>min</tt>).  This environment can be augmented with user-defined variables,
+using the expression <tt>(define <i>variable value</i>)</tt>.  For now, we can implement an environment as a Python dict of {variable: value} pairs.
+
+<pre class="prettyprint "><span class="typ">Env</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> dict &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># An environment is a mapping of {variable: value}</span><span class="pln"><br><br></span><span class="kwd">def</span><span class="pln"> standard_env</span><span class="pun">():</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"An environment with some Scheme standard procedures."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">import</span><span class="pln"> math</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">operator</span><span class="pln"> as op<br>&nbsp; &nbsp; env </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Env</span><span class="pun">()</span><span class="pln"><br>&nbsp; &nbsp; env</span><span class="pun">.</span><span class="pln">update</span><span class="pun">(</span><span class="pln">vars</span><span class="pun">(</span><span class="pln">math</span><span class="pun">))</span><span class="pln"> </span><span class="com"># sin, cos, sqrt, pi, ...</span><span class="pln"><br>&nbsp; &nbsp; env</span><span class="pun">.</span><span class="pln">update</span><span class="pun">({</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'+'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">add</span><span class="pun">,</span><span class="pln"> </span><span class="str">'-'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="kwd">sub</span><span class="pun">,</span><span class="pln"> </span><span class="str">'*'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">mul</span><span class="pun">,</span><span class="pln"> </span><span class="str">'/'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">div</span><span class="pun">,</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'&gt;'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">gt</span><span class="pun">,</span><span class="pln"> </span><span class="str">'&lt;'</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">lt</span><span class="pun">,</span><span class="pln"> </span><span class="str">'&gt;='</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">ge</span><span class="pun">,</span><span class="pln"> </span><span class="str">'&lt;='</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">le</span><span class="pun">,</span><span class="pln"> </span><span class="str">'='</span><span class="pun">:</span><span class="pln">op</span><span class="pun">.</span><span class="pln">eq</span><span class="pun">,</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'abs'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; abs</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'append'</span><span class="pun">:</span><span class="pln"> &nbsp;op</span><span class="pun">.</span><span class="pln">add</span><span class="pun">,</span><span class="pln"> &nbsp;<br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'apply'</span><span class="pun">:</span><span class="pln"> &nbsp; apply</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'begin'</span><span class="pun">:</span><span class="pln"> &nbsp; </span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">*</span><span class="pln">x</span><span class="pun">:</span><span class="pln"> x</span><span class="pun">[-</span><span class="lit">1</span><span class="pun">],</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'car'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">],</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'cdr'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">1</span><span class="pun">:],</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'cons'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp;</span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">,</span><span class="pln">y</span><span class="pun">:</span><span class="pln"> </span><span class="pun">[</span><span class="pln">x</span><span class="pun">]</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> y</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'eq?'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; op</span><span class="pun">.</span><span class="pln">is_</span><span class="pun">,</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'equal?'</span><span class="pun">:</span><span class="pln"> &nbsp;op</span><span class="pun">.</span><span class="pln">eq</span><span class="pun">,</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'length'</span><span class="pun">:</span><span class="pln"> &nbsp;len</span><span class="pun">,</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'list'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp;</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">*</span><span class="pln">x</span><span class="pun">:</span><span class="pln"> list</span><span class="pun">(</span><span class="pln">x</span><span class="pun">),</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'list?'</span><span class="pun">:</span><span class="pln"> &nbsp; </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln">list</span><span class="pun">),</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'map'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; map</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'max'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; max</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'min'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; min</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'not'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; op</span><span class="pun">.</span><span class="pln">not_</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'null?'</span><span class="pun">:</span><span class="pln"> &nbsp; </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> x </span><span class="pun">==</span><span class="pln"> </span><span class="pun">[],</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'number?'</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Number</span><span class="pun">),</span><span class="pln"> &nbsp; <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'procedure?'</span><span class="pun">:</span><span class="pln"> callable</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'round'</span><span class="pun">:</span><span class="pln"> &nbsp; round</span><span class="pun">,</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">'symbol?'</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">lambda</span><span class="pln"> x</span><span class="pun">:</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Symbol</span><span class="pun">),</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="pun">})</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> env<br><br>global_env </span><span class="pun">=</span><span class="pln"> standard_env</span><span class="pun">()</span></pre>
+
+<h2>Evaluation: <tt>eval</tt></h2>
+
+<p>We are now ready for the implementation of <tt>eval</tt>.
+As a refresher, we repeat the table of Scheme forms:
+
+</p><p>
+<table border="1" cellpadding="3" cellspacing="0">
+  <tbody><tr style="background-color:#EEEEEE"><th>Expression</th><th width="23%">Syntax</th><th>Semantics and Example
+
+  </th></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.1">variable reference</a></td><td><i>var</i></td><td>A symbol is interpreted as a variable name;
+  its value is the variable's
+  value. <br>Example: <tt>r</tt> ⇒ <tt>10</tt> (assuming <tt>r</tt> was previously defined to be 10)
+
+    </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2">constant
+  literal</a></td><td><i>number</i></td><td>A number 
+  evaluates to itself. <br>Examples: <tt>12 ⇒ 12</tt> <i>or</i>
+  <tt>-3.45e+6 ⇒ -3.45e+6</tt>
+
+          </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.2">quotation</a></td><td><tt>(quote </tt><i>exp</i><tt>)</tt></td><td>
+Return the <i>exp</i> literally; do not evaluate it. <br>Example:
+	<tt>(quote (+ 1 2)) ⇒ (+ 1 2)</tt> 
+
+      </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.5">conditional</a></td><td><tt>(if</tt> <i>test conseq
+  alt</i><tt>) </tt></td><td>Evaluate <i>test</i>; if true,
+  evaluate and return <i>conseq</i>; otherwise  
+  <i>alt</i>. <br>Example: <tt>(if (&gt; 10 20) (+ 1 1) (+ 3 3)) ⇒ 6</tt>
+    
+
+    </td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-8.html#%_sec_5.2">definition</a>
+</td><td><tt>(define</tt> <i>var</i> <i>exp</i><tt>)</tt>
+</td><td>Define a new variable and give it
+  the value of evaluating the expression <i>exp</i>. 
+      <br>Examples: <tt>(define r 10)</tt> 
+      
+</td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.3">procedure
+   call</a></td><td><tt>(</tt><i>proc arg...</i><tt>)</tt>	</td><td>If <i>proc</i> is
+   anything other than one of the symbols <tt>if,  define,
+   </tt> or <tt>quote</tt> then it is treated as a procedure.  Evaluate <i>proc</i>
+   and all the <i>args</i>, and then the procedure is applied to the list of <i>arg</i> values. <br>Example: <tt>(sqrt (* 2 8)) ⇒ 4.0</tt>
+  
+   </td></tr></tbody></table>
+
+</p><p>Notice how closely the code for <tt>eval</tt> follows the table:
+
+</p><pre class="prettyprint "><span class="kwd">def</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">=</span><span class="pln">global_env</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Evaluate an expression in an environment."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Symbol</span><span class="pun">):</span><span class="pln"> &nbsp; &nbsp; &nbsp;</span><span class="com"># variable reference</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> env</span><span class="pun">[</span><span class="pln">x</span><span class="pun">]</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> </span><span class="kwd">not</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">List</span><span class="pun">):</span><span class="pln"> &nbsp;</span><span class="com"># constant literal</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> x &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'quote'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># (quote exp)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> exp<br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'if'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (if test conseq alt)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> test</span><span class="pun">,</span><span class="pln"> conseq</span><span class="pun">,</span><span class="pln"> alt</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; exp </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">conseq </span><span class="kwd">if</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">test</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">else</span><span class="pln"> alt</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'define'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (define var exp)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">var</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; env</span><span class="pun">[</span><span class="kwd">var</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">else</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># (proc arg...)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; proc </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">],</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; args </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">eval</span><span class="pun">(</span><span class="pln">arg</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> arg </span><span class="kwd">in</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">1</span><span class="pun">:]]</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> proc</span><span class="pun">(*</span><span class="pln">args</span><span class="pun">)</span></pre>
+
+<p><i>We're done!</i> You can see it all in action:
+
+</p><pre class="prettyprint">&gt;&gt;&gt;<span class="pln"> eval</span><span class="pun">(</span><span class="pln">parse</span><span class="pun">(</span><span class="str">"(define r 10)"</span><span class="pun">))</span><span class="pln"><br></span>&gt;&gt;&gt;<span class="pln"> eval</span><span class="pun">(</span><span class="pln">parse</span><span class="pun">(</span><span class="str">"(* pi (* r r))"</span><span class="pun">))</span><span class="pln"><br></span><span class="lit">314</span><span class="pun">.</span><span class="lit">1592653589793</span></pre>
+
+<h2>Interaction: A REPL</h2>
+
+It is tedious to have to enter "<tt>eval(parse(...))</tt>" all the time.
+One of Lisp's great legacies is the notion of an interactive 
+read-eval-print loop:
+a way for a programmer to enter an expression, and see it immediately 
+read, evaluated, and printed, without having to go through a lengthy 
+build/compile cycle.  So let's define the function <tt>repl</tt> (which stands for read-eval-print-loop), and the function <tt>schemestr</tt> which returns a string representing a Scheme object.
+
+<pre class="prettyprint "><span class="kwd">def</span><span class="pln"> repl</span><span class="pun">(</span><span class="pln">prompt</span><span class="pun">=</span><span class="str">'lis.py&gt; '</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"A prompt-read-eval-print loop."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">while</span><span class="pln"> </span><span class="kwd">True</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; val </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">parse</span><span class="pun">(</span><span class="pln">raw_input</span><span class="pun">(</span><span class="pln">prompt</span><span class="pun">)))</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> val </span><span class="kwd">is</span><span class="pln"> </span><span class="kwd">not</span><span class="pln"> </span><span class="kwd">None</span><span class="pun">:</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">print</span><span class="pun">(</span><span class="pln">schemestr</span><span class="pun">(</span><span class="pln">val</span><span class="pun">))</span><span class="pln"><br><br></span><span class="kwd">def</span><span class="pln"> schemestr</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Convert a Python object back into a Scheme-readable string."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> &nbsp;isinstance</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> list</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> </span><span class="str">'('</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> </span><span class="str">' '</span><span class="pun">.</span><span class="pln">join</span><span class="pun">(</span><span class="pln">map</span><span class="pun">(</span><span class="pln">schemestr</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">))</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> </span><span class="str">')'</span><span class="pln"> <br>&nbsp; &nbsp; </span><span class="kwd">else</span><span class="pun">:</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> str</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">)</span></pre>
+
+Here is <tt>repl</tt> in action:
+
+<pre class="prettyprint">&gt;&gt;&gt;<span class="pln"> repl</span><span class="pun">()</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define r </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(*</span><span class="pln"> pi </span><span class="pun">(*</span><span class="pln"> r r</span><span class="pun">))</span><span class="pln"><br></span><span class="lit">314</span><span class="pun">.</span><span class="lit">159265359</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span>&gt;<span class="pln"> </span><span class="pun">(*</span><span class="pln"> </span><span class="lit">11</span><span class="pln"> </span><span class="lit">11</span><span class="pun">)</span><span class="pln"> </span><span class="lit">120</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(*</span><span class="pln"> </span><span class="lit">7</span><span class="pln"> </span><span class="lit">6</span><span class="pun">)</span><span class="pln"> oops</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">42</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span></pre>
+
+<h2>Language 2: Full Lispy</h2>
+
+We will now extend our language with two new special forms, giving us a much more nearly-complete Scheme subset:
+
+<p><table border="1" cellpadding="3" cellspacing="0">
+  <tbody><tr style="background-color:#EEEEEE"><th>Expression</th><th width="23%">Syntax</th><th>Semantics and Example
+
+
+    
+  </th></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.6">assignment</a></td><td><tt>(set!</tt> <i>var
+  exp</i><tt>)</tt></td><td>Evaluate <i>exp</i> and assign that value to
+  <i>var</i>, which must have been previously defined (with a
+  <tt>define</tt> or as a parameter to an enclosing procedure).
+    <br>Example: <tt>(set! r2 (* r r))</tt>
+
+
+      
+</td></tr><tr><td align="center"><a href="http://www.schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-7.html#%_sec_4.1.4">procedure</a></td><td><tt>(lambda (</tt><i>var...</i><tt>)</tt>
+  <i>exp</i><tt>)</tt></td><td>Create a procedure
+  with parameter(s) named <i>var...</i> and <i>exp</i> as the body. <br>Example: <tt>(lambda (r)
+  (* pi (* r r)))</tt>
+
+</td></tr></tbody></table>
+
+</p><p>The <tt>lambda</tt> special form (an obscure nomenclature choice that refers to Alonzo Church's <a href="http://en.wikipedia.org/wiki/Lambda_calculus">lambda calculus</a>) creates a procedure.  
+We want procedures to work like this:
+
+</p><pre class="prettyprint"><span class="pln">lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define circle</span><span class="pun">-</span><span class="pln">area </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">r</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(*</span><span class="pln"> pi </span><span class="pun">(*</span><span class="pln"> r r</span><span class="pun">)))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">circle</span><span class="pun">-</span><span class="pln">area </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">314</span><span class="pun">.</span><span class="lit">159265359</span></pre>
+
+The procedure call <tt>(circle-area 10)</tt> causes us
+to evaluate the body of the procedure, <tt>(* pi (* r r))</tt>, in an environment in which <tt>pi</tt> and <tt>*</tt> have the
+same global values they always did, but now <tt>r</tt> has the value 10.
+However, it wouldn't do to just set <tt>r</tt> to be 10 in the global environment.  What if we were using <tt>r</tt> for some other purpose? We wouldn't want a call to <tt>circle-area</tt> to alter that value.  Instead, we want to arrange for there to be a <i>local</i> variable named <tt>r</tt> that we can set to 10 without worrying about interfering with any other variable that happens to have the same name.
+We will create a new kind of environment, one which allows for both local and global variables.  
+
+<p>The idea is that when we evaluate <tt>(circle-area 10)</tt>, we will fetch the procedure body, <tt>(* pi (* r r))</tt>,
+and evaluate it in an environment that has <tt>r</tt> as the sole local 
+variable, but also has access to the global environment.  
+In other words, we want an environment that looks like this, with the 
+local environment nested inside the "outer" global environment:
+
+</p><p><table border="1" bordercolor="red" cellpadding="5" cellspacing="1"><tbody><tr><td>
+<tt>pi: 3.141592653589793
+<br>*: &lt;built-in function mul&gt;
+<br>...
+<br>
+<table border="1" bordercolor="blue" cellpadding="5" cellspacing="1">
+<tbody><tr><td>r: 10
+</td></tr></tbody></table>
+</tt></td></tr></tbody></table>
+
+</p><p>When we look up a variable in such a nested environment, we look first at the innermost level, but if
+we don't find the variable name there, we move to the next outer level.
+
+</p><p>It is clear that procedures and environments are intertwined, so let's define them together:
+
+</p><pre class="prettyprint"><span class="kwd">class</span><span class="pln"> </span><span class="typ">Procedure</span><span class="pun">(</span><span class="pln">object</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"A user-defined Scheme procedure."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">def</span><span class="pln"> __init__</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln"> parms</span><span class="pun">,</span><span class="pln"> body</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; self</span><span class="pun">.</span><span class="pln">parms</span><span class="pun">,</span><span class="pln"> self</span><span class="pun">.</span><span class="pln">body</span><span class="pun">,</span><span class="pln"> self</span><span class="pun">.</span><span class="pln">env </span><span class="pun">=</span><span class="pln"> parms</span><span class="pun">,</span><span class="pln"> body</span><span class="pun">,</span><span class="pln"> env<br>&nbsp; &nbsp; </span><span class="kwd">def</span><span class="pln"> __call__</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln"> </span><span class="pun">*</span><span class="pln">args</span><span class="pun">):</span><span class="pln"> <br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">self</span><span class="pun">.</span><span class="pln">body</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Env</span><span class="pun">(</span><span class="pln">self</span><span class="pun">.</span><span class="pln">parms</span><span class="pun">,</span><span class="pln"> args</span><span class="pun">,</span><span class="pln"> self</span><span class="pun">.</span><span class="pln">env</span><span class="pun">))</span><span class="pln"><br><br></span><span class="kwd">class</span><span class="pln"> </span><span class="typ">Env</span><span class="pun">(</span><span class="pln">dict</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"An environment: a dict of {'var':val} pairs, with an outer Env."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">def</span><span class="pln"> __init__</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln"> parms</span><span class="pun">=(),</span><span class="pln"> args</span><span class="pun">=(),</span><span class="pln"> outer</span><span class="pun">=</span><span class="kwd">None</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; self</span><span class="pun">.</span><span class="pln">update</span><span class="pun">(</span><span class="pln">zip</span><span class="pun">(</span><span class="pln">parms</span><span class="pun">,</span><span class="pln"> args</span><span class="pun">))</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; self</span><span class="pun">.</span><span class="pln">outer </span><span class="pun">=</span><span class="pln"> outer<br>&nbsp; &nbsp; </span><span class="kwd">def</span><span class="pln"> find</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">var</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="str">"Find the innermost Env where var appears."</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> self </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">var</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> self</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">else</span><span class="pln"> self</span><span class="pun">.</span><span class="pln">outer</span><span class="pun">.</span><span class="pln">find</span><span class="pun">(</span><span class="kwd">var</span><span class="pun">)</span><span class="pln"><br><br>global_env </span><span class="pun">=</span><span class="pln"> standard_env</span><span class="pun">()</span></pre>
+
+We see that every procedure has three components: a list of parameter names,  a body expression, and an environment
+that tells us what non-local variables are accessible from the body.  
+
+<p>An environment is a subclass of <tt>dict</tt>, so it has
+all the methods that <tt>dict</tt> has. In addition there are two methods: the constructor
+<tt>__init__</tt> builds a new environment by taking a list of parameter names
+and a corresponding list of argument values, and creating a new environment that has those
+{variable: value} pairs as the inner part, and also refers to the given <tt>outer</tt> environment.
+The method <tt>find</tt> is used to find the right environment for
+a variable: either the inner one or an outer one. 
+
+</p><p>To see how these all go together, here is the new definition of <tt>eval</tt>. Note that
+the clause for variable reference has changed: we now have to call <tt>env.find(x)</tt> to find at what level
+the variable <tt>x</tt> exists; then we can fetch the value of <tt>x</tt> from that level. (The clause for
+<tt>define</tt> has not changed, because a <tt>define</tt> always adds a new variable
+to the innermost environment.)  There are two new clauses: for <tt>set!</tt>, we find the environment level
+where the variable exists and set it to a new value.  With <tt>lambda</tt>, we create a new procedure object with the given
+parameter list, body, and environment.
+
+</p><pre class="prettyprint"><span class="kwd">def</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">=</span><span class="pln">global_env</span><span class="pun">):</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="str">"Evaluate an expression in an environment."</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">if</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">Symbol</span><span class="pun">):</span><span class="pln"> &nbsp; &nbsp; &nbsp;</span><span class="com"># variable reference</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> env</span><span class="pun">.</span><span class="pln">find</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)[</span><span class="pln">x</span><span class="pun">]</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> </span><span class="kwd">not</span><span class="pln"> isinstance</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="typ">List</span><span class="pun">):</span><span class="pln"> &nbsp;</span><span class="com"># constant literal</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> x &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'quote'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># (quote exp)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> exp<br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'if'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (if test conseq alt)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> test</span><span class="pun">,</span><span class="pln"> conseq</span><span class="pun">,</span><span class="pln"> alt</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; exp </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">conseq </span><span class="kwd">if</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">test</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">else</span><span class="pln"> alt</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'define'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (define var exp)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">var</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; env</span><span class="pun">[</span><span class="kwd">var</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'set!'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (set! var exp)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">var</span><span class="pun">,</span><span class="pln"> exp</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; env</span><span class="pun">.</span><span class="pln">find</span><span class="pun">(</span><span class="kwd">var</span><span class="pun">)[</span><span class="kwd">var</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">exp</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">elif</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">==</span><span class="pln"> </span><span class="str">'lambda'</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; </span><span class="com"># (lambda (var...) body)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="pun">(</span><span class="pln">_</span><span class="pun">,</span><span class="pln"> parms</span><span class="pun">,</span><span class="pln"> body</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> x<br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Procedure</span><span class="pun">(</span><span class="pln">parms</span><span class="pun">,</span><span class="pln"> body</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; </span><span class="kwd">else</span><span class="pun">:</span><span class="pln"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span><span class="com"># (proc arg...)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; proc </span><span class="pun">=</span><span class="pln"> eval</span><span class="pun">(</span><span class="pln">x</span><span class="pun">[</span><span class="lit">0</span><span class="pun">],</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; args </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">eval</span><span class="pun">(</span><span class="pln">arg</span><span class="pun">,</span><span class="pln"> env</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> arg </span><span class="kwd">in</span><span class="pln"> x</span><span class="pun">[</span><span class="lit">1</span><span class="pun">:]]</span><span class="pln"><br>&nbsp; &nbsp; &nbsp; &nbsp; </span><span class="kwd">return</span><span class="pln"> proc</span><span class="pun">(*</span><span class="pln">args</span><span class="pun">)</span></pre>
+
+<p>To appreciate how procedures and environments work together, consider
+ this program and the environment that gets formed when we evaluate <tt>(account1 -20.00)</tt>:
+
+</p><p><table><tbody><tr><td>
+<p>
+<table border="1" bordercolor="red" cellpadding="5" cellspacing="1">
+<tbody><tr><td valign="top"><tt>(define <b style="color:red">make-account</b>
+<table border="1" bordercolor="blue" cellpadding="5" cellspacing="1">  
+<tbody><tr><td>&nbsp;&nbsp;(lambda (<b style="color:blue">balance</b>)
+<table border="1" bordercolor="green" cellpadding="5" cellspacing="1">  
+<tbody><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;(lambda (<b style="color:green">amt</b>)
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(begin <b style="background-color:yellow">(set! balance (+ balance amt))</b> 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;balance))))
+  </td></tr></tbody></table></td></tr></tbody></table>
+<br><tt>(define <b style="color:red">account1</b> (make-account 100.00))
+  <br>(account1 -20.00)
+</tt></tt></td></tr></tbody></table>
+
+</p></td><td> &nbsp; </td><td valign="top">
+
+<table border="1" bordercolor="red" cellpadding="5" cellspacing="1">
+<tbody><tr><td valign="top"><b style="color:red"><tt>+</tt></b>: &lt;built-in operator add&gt;
+<br><tt><b style="color:red">make-account</b>: &lt;a Procedure&gt;
+<table border="1" bordercolor="blue" cellpadding="5" cellspacing="1">  
+<tbody><tr><td><tt><b style="color:blue">balance</b>: 100.00
+<table border="1" bordercolor="green" cellpadding="5" cellspacing="1">  
+<tbody><tr><td><tt><b style="color:green">amt</b>: -20.00
+  </tt></td></tr></tbody></table></tt></td></tr></tbody></table>
+<br><tt><tt><b style="color:red">account1</b>: &lt;a Procedure&gt;
+</tt></tt></tt></td></tr></tbody></table>
+
+</td></tr></tbody></table>
+
+</p><p>Each rectangular box represents an environment, and the color of
+the box matches the color of the variables that are newly defined in
+the environment.  In the last two lines of the program we define <tt>account1</tt> and call
+<tt>(account1 -20.00)</tt>; this represents the creation of a bank account
+with a 100 dollar opening balance, followed by a 20 dollar withdrawal.
+In the process of evaluating <tt>(account1 -20.00)</tt>, we will eval the
+expression highlighted in yellow.  There are three variables in that
+expression.  <tt>amt</tt> can be found immediately in the innermost
+(green) environment. But <tt>balance</tt> is not defined there: we
+have to look at the green environment's outer <tt>env</tt>, the blue
+one. And finally, the variable <tt>+</tt> is not found in either of
+those; we need to do one more outer step, to the global (red) environment.
+This process of looking first in inner environments and then in
+outer ones is called <i>lexical scoping</i>.  
+<tt>Env.find(var)</tt> finds the right environment according to
+lexical scoping rules.
+
+
+
+</p><p>Let's see what we can do now:
+
+</p><pre class="prettyprint">&gt;&gt;&gt;<span class="pln"> repl</span><span class="pun">()</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define circle</span><span class="pun">-</span><span class="pln">area </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">r</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(*</span><span class="pln"> pi </span><span class="pun">(*</span><span class="pln"> r r</span><span class="pun">))))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">circle</span><span class="pun">-</span><span class="pln">area </span><span class="lit">3</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">28</span><span class="pun">.</span><span class="lit">274333877</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define fact </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span>&lt;<span class="pun">=</span><span class="pln"> n </span><span class="lit">1</span><span class="pun">)</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="pun">(*</span><span class="pln"> n </span><span class="pun">(</span><span class="pln">fact </span><span class="pun">(-</span><span class="pln"> n </span><span class="lit">1</span><span class="pun">))))))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">fact </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">3628800</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">fact </span><span class="lit">100</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">9332621544394415268169923885626670049071596826438162146859296389521759999322991</span><span class="pln"><br></span><span class="lit">5608941463976156518286253697920827223758251185210916864000000000000000000000000</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">circle</span><span class="pun">-</span><span class="pln">area </span><span class="pun">(</span><span class="pln">fact </span><span class="lit">10</span><span class="pun">))</span><span class="pln"><br></span><span class="lit">4</span><span class="pun">.</span><span class="lit">1369087198e</span><span class="pun">+</span><span class="lit">13</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define first car</span><span class="pun">)</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define rest cdr</span><span class="pun">)</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define count </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">item L</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">if</span><span class="pln"> L </span><span class="pun">(+</span><span class="pln"> </span><span class="pun">(</span><span class="pln">equal</span><span class="pun">?</span><span class="pln"> item </span><span class="pun">(</span><span class="pln">first L</span><span class="pun">))</span><span class="pln"> </span><span class="pun">(</span><span class="pln">count item </span><span class="pun">(</span><span class="pln">rest L</span><span class="pun">)))</span><span class="pln"> </span><span class="lit">0</span><span class="pun">)))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">count </span><span class="lit">0</span><span class="pln"> </span><span class="pun">(</span><span class="pln">list </span><span class="lit">0</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> </span><span class="lit">3</span><span class="pln"> </span><span class="lit">0</span><span class="pln"> </span><span class="lit">0</span><span class="pun">))</span><span class="pln"><br></span><span class="lit">3</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">count </span><span class="pun">(</span><span class="pln">quote the</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="pln">quote </span><span class="pun">(</span><span class="pln">the more the merrier the bigger the better</span><span class="pun">)))</span><span class="pln"><br></span><span class="lit">4</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define twice </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(*</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> x</span><span class="pun">)))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">twice </span><span class="lit">5</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">10</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define repeat </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">f</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="pln">f </span><span class="pun">(</span><span class="pln">f x</span><span class="pun">)))))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">((</span><span class="pln">repeat twice</span><span class="pun">)</span><span class="pln"> </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">40</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">((</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat twice</span><span class="pun">))</span><span class="pln"> </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">160</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">((</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat twice</span><span class="pun">)))</span><span class="pln"> </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">2560</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">((</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat </span><span class="pun">(</span><span class="pln">repeat twice</span><span class="pun">))))</span><span class="pln"> </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">655360</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">pow </span><span class="lit">2</span><span class="pln"> </span><span class="lit">16</span><span class="pun">)</span><span class="pln"><br></span><span class="lit">65536</span><span class="pun">.</span><span class="lit">0</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define fib </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span>&lt;<span class="pln"> n </span><span class="lit">2</span><span class="pun">)</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="pun">(+</span><span class="pln"> </span><span class="pun">(</span><span class="pln">fib </span><span class="pun">(-</span><span class="pln"> n </span><span class="lit">1</span><span class="pun">))</span><span class="pln"> </span><span class="pun">(</span><span class="pln">fib </span><span class="pun">(-</span><span class="pln"> n </span><span class="lit">2</span><span class="pun">))))))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">define range </span><span class="pun">(</span><span class="kwd">lambda</span><span class="pln"> </span><span class="pun">(</span><span class="pln">a b</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(=</span><span class="pln"> a b</span><span class="pun">)</span><span class="pln"> </span><span class="pun">(</span><span class="pln">quote </span><span class="pun">())</span><span class="pln"> </span><span class="pun">(</span><span class="pln">cons a </span><span class="pun">(</span><span class="pln">range </span><span class="pun">(+</span><span class="pln"> a </span><span class="lit">1</span><span class="pun">)</span><span class="pln"> b</span><span class="pun">)))))</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">range </span><span class="lit">0</span><span class="pln"> </span><span class="lit">10</span><span class="pun">)</span><span class="pln"><br></span><span class="pun">(</span><span class="lit">0</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> </span><span class="lit">3</span><span class="pln"> </span><span class="lit">4</span><span class="pln"> </span><span class="lit">5</span><span class="pln"> </span><span class="lit">6</span><span class="pln"> </span><span class="lit">7</span><span class="pln"> </span><span class="lit">8</span><span class="pln"> </span><span class="lit">9</span><span class="pun">)</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">map fib </span><span class="pun">(</span><span class="pln">range </span><span class="lit">0</span><span class="pln"> </span><span class="lit">10</span><span class="pun">))</span><span class="pln"><br></span><span class="pun">(</span><span class="lit">1</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> </span><span class="lit">3</span><span class="pln"> </span><span class="lit">5</span><span class="pln"> </span><span class="lit">8</span><span class="pln"> </span><span class="lit">13</span><span class="pln"> </span><span class="lit">21</span><span class="pln"> </span><span class="lit">34</span><span class="pln"> </span><span class="lit">55</span><span class="pun">)</span><span class="pln"><br>lis</span><span class="pun">.</span><span class="pln">py</span>&gt;<span class="pln"> </span><span class="pun">(</span><span class="pln">map fib </span><span class="pun">(</span><span class="pln">range </span><span class="lit">0</span><span class="pln"> </span><span class="lit">20</span><span class="pun">))</span><span class="pln"><br></span><span class="pun">(</span><span class="lit">1</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> </span><span class="lit">3</span><span class="pln"> </span><span class="lit">5</span><span class="pln"> </span><span class="lit">8</span><span class="pln"> </span><span class="lit">13</span><span class="pln"> </span><span class="lit">21</span><span class="pln"> </span><span class="lit">34</span><span class="pln"> </span><span class="lit">55</span><span class="pln"> </span><span class="lit">89</span><span class="pln"> </span><span class="lit">144</span><span class="pln"> </span><span class="lit">233</span><span class="pln"> </span><span class="lit">377</span><span class="pln"> </span><span class="lit">610</span><span class="pln"> </span><span class="lit">987</span><span class="pln"> </span><span class="lit">1597</span><span class="pln"> </span><span class="lit">2584</span><span class="pln"> </span><span class="lit">4181</span><span class="pln"> </span><span class="lit">6765</span><span class="pun">)</span></pre>
+
+We now have a language with procedures, variables, conditionals (<tt>if</tt>), and sequential execution (the <tt>begin</tt> procedure).  If you are familiar with other languages, you might think that a <tt>while</tt> or <tt>for</tt>
+ loop would be needed, but
+Scheme manages to do without these just fine. The Scheme report says 
+"Scheme demonstrates that a very small number of rules for forming 
+expressions, with no restrictions on how they are composed, suffice to 
+form a practical and efficient programming language." In Scheme
+you iterate by defining recursive functions.
+
+<h2>How Small/Fast/Complete/Good is Lispy?</h2>
+
+In which we judge Lispy on several criteria:
+
+<ul>
+<li><b><i>Small:</i></b> Lispy is <i>very</i> small: 116 non-comment
+  non-blank lines; 4K of source code. (An earlier version was just 90 lines, but had fewer standard procedures
+and was perhaps a bit too terse.)   The smallest version of
+  my Scheme in Java, <a href="http://norvig.com/jscheme.html">Jscheme</a>, was 1664 lines and 57K of source. Jscheme was
+  originally called SILK (Scheme in Fifty Kilobytes), but I only kept
+  under that limit by counting bytecode rather than source code. Lispy does much
+  better; I think it meets Alan Kay's 1972 <a href="http://gagne.homedns.org/%7Etgagne/contrib/EarlyHistoryST.html">claim</a>
+  that <i>you could define the
+  "most powerful language in the world" in "a page of code."</i> (However,
+  I think Alan might disagree, because he would count the Python compiler as part of the code, putting me <i>well</i> over a page.)
+
+<pre class="prettyprint"><span class="pln">bash$ grep </span><span class="str">"^\s*[^#\s]"</span><span class="pln"> lis</span><span class="pun">.</span><span class="pln">py </span><span class="pun">|</span><span class="pln"> wc<br>&nbsp; &nbsp; &nbsp;</span><span class="lit">116</span><span class="pln"> &nbsp; &nbsp; </span><span class="lit">496</span><span class="pln"> &nbsp; &nbsp;</span><span class="lit">4274</span></pre><p>
+
+</p></li><li><b><i>Fast:</i></b> Lispy computes <tt>(fact 100)</tt> in 0.004
+seconds.  That's fast enough for me (although far slower than most
+other ways of computing it). <p>
+
+</p></li><li><b><i>Complete:</i></b> Lispy is not very complete compared to the
+Scheme standard.  Some major shortcomings:
+<ul>
+  <li> <b><i>Syntax</i></b>: Missing comments, quote and quasiquote notation, # literals, the derived
+  expression types (such as <tt>cond</tt>, derived from <tt>if</tt>,
+  or <tt>let</tt>, derived from <tt>lambda</tt>), and dotted list notation.
+</li><li> <b><i>Semantics</i></b>: Missing call/cc and tail recursion.  
+</li><li> <b><i>Data Types</i></b>: Missing strings, characters, booleans, ports,
+  vectors, exact/inexact numbers.
+  Python lists are actually closer to Scheme
+  vectors than to the Scheme pairs and lists that we implement with them.
+</li><li> <b><i>Procedures</i></b>: Missing over 100 primitive procedures: all
+  the ones for the missing data types, plus some others like
+  <tt>set-car!</tt> and <tt>set-cdr!</tt>, because we can't 
+  implement <tt>set-cdr!</tt> completely using Python lists.
+  
+ </li><li> <b><i>Error recovery</i></b>: Lispy does not attempt to detect,
+  reasonably report, or recover from errors.  Lispy expects the
+  programmer to be perfect.
+</li></ul>
+<!-- Some of these are corrected in a longer <a href="lispy2.html">Lispy 2.0</a>. -->
+</li><li><b><i>Good:</i></b> That's up to the readers to decide.  I found it
+was good for my purpose of explaining Lisp interpreters.
+</li></ul>
+
+<h2>True Story</h2>
+
+To back up the idea that it can be very helpful to know how
+interpreters work, here's a story.  Way back in 1984 I was writing a
+Ph.D. thesis.  This was before LaTeX, before Microsoft Word for Windows―we used
+troff. Unfortunately, troff had no facility for forward references
+to symbolic labels: I wanted to be able to write "As we will see on
+page @theorem-x" and then write something like "@(set theorem-x \n%)" in
+the appropriate place (the troff register \n% holds the page number). My
+fellow grad student Tony DeRose felt the same need, and together we
+sketched out a simple Lisp program that would handle this as a preprocessor.  However,
+it turned out that the Lisp we had at the time was good at reading
+Lisp expressions, but so slow at reading character-at-a-time non-Lisp
+expressions that our program was annoying to use.  
+<p>
+From there Tony and I split paths.  He reasoned that the hard part was
+the interpreter for expressions; he needed Lisp for that, but he knew
+how to write a tiny C routine
+for echoing the non-Lisp characters and link it in to the Lisp
+program.  I didn't know how to do that linking, but I reasoned that writing an
+interpreter for this trivial language (all it had was set variable,
+fetch variable, and string concatenate) was easy, so I wrote an
+interpreter in C. So, ironically, Tony wrote a Lisp program (with one small routine in C) because he was a
+C programmer, and I wrote a C program because I was a Lisp programmer.
+</p><p>
+In the end, we both got our theses done (<a href="http://www.eecs.berkeley.edu/Pubs/TechRpts/1985/6081.html">Tony</a>, <a href="http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/5995.html">Peter</a>).
+
+</p><h2>The Whole Thing</h2>
+
+The whole program is here: <a href="http://norvig.com/lis.py">lis.py</a>).
+
+<h2>Further Reading</h2>
+
+   
+  
+  <p>To learn more about Scheme consult some of the fine books (by
+   <a href="http://books.google.com/books?id=xyO-KLexVnMC&amp;lpg=PP1&amp;dq=scheme%20programming%20book&amp;pg=PP1#v=onepage&amp;q&amp;f=false">Friedman
+   and Fellesein</a>,
+   <a href="http://books.google.com/books?id=wftS4tj4XFMC&amp;lpg=PA300&amp;dq=scheme%20programming%20book&amp;pg=PP1#v=onepage&amp;q&amp;f=false">Dybvig</a>,
+   <a href="http://books.google.com/books?id=81mFK8pqh5EC&amp;lpg=PP1&amp;dq=scheme%20programming%20book&amp;pg=PP1#v=onepage&amp;q&amp;f=false">Queinnec</a>,
+   <a href="http://www.eecs.berkeley.edu/%7Ebh/ss-toc2.html">Harvey and
+   Wright</a> or
+   <a href="http://mitpress.mit.edu/sicp/">Sussman and Abelson</a>),
+   videos (by <a href="http://groups.csail.mit.edu/mac/classes/6.001/abelson-sussman-lectures/">Abelson
+   and Sussman</a>),
+   tutorials (by
+      <a href="http://www.ccs.neu.edu/home/dorai/t-y-scheme/t-y-scheme.html">Dorai</a>,
+   <a href="http://docs.racket-lang.org/quick/index.html">PLT</a>, or
+   <a href="http://cs.gettysburg.edu/%7Etneller/cs341/scheme-intro/index.html">Neller</a>),
+   or the
+      <a href="http://www.schemers.org/Documents/Standards/R5RS/HTML">reference
+   manual</a>.
+
+</p><p>I also have another page describing a <a href="http://norvig.com/lispy2.html">more advanced version of Lispy</a>.
+
+
+</p><hr>
+<i><a href="http://norvig.com/">Peter Norvig</a></i>
+
+<p></p><hr> 
+<div id="disqus_thread"><iframe verticalscrolling="no" horizontalscrolling="no" src="lisp-in-python_files/a.html" style="width: 100% ! important; border: medium none ! important; overflow: hidden ! important; height: 6540px ! important;" title="Disqus" tabindex="0" scrolling="no" allowtransparency="true" data-disqus-uid="2" id="dsq-2" frameborder="0" width="100%"></iframe></div><script type="text/javascript" src="lisp-in-python_files/embed.js"></script><noscript><a href="http://norvig.disqus.com/?url=ref">View the forum thread.</a></noscript> 
+ 
+<script type="text/javascript"> 
+//<[CDATA[
+(function() {
+links = document.getElementsByTagName('a');
+query = '?';
+for(var i = 0; i < links.length; i++) {
+if(links[i].href.indexOf('#disqus_thread') >= 0) {
+query += 'url' + i + '=' + encodeURIComponent(links[i].href) + '&';
+}
+}
+document.write('<script type="text/javascript" src="http://disqus.com/forums/norvig/get_num_replies.js' + query + '"></' + 'script>');
+})();
+//]]>
+</script><script type="text/javascript" src="lisp-in-python_files/get_num_replies.js"></script> </body></html>
