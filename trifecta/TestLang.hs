@@ -1,5 +1,3 @@
-module Tokenizer where
-
 import Control.Applicative
 import Control.Lens
 import Data.Monoid
@@ -30,13 +28,13 @@ statement = do
   return $ Statement var val r
 
 
-main :: IO ()
+
 type Program = [Statement]
 
 program :: Parser Program
 program = (:) <$> statement <*> (program <|> pure [])
 
-
+main :: IO ()
 main = do
   (fileName:_ ) <- getArgs
   res <- parseFromFileEx (program <* eof) fileName
