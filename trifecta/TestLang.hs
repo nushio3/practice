@@ -1,5 +1,6 @@
 import Control.Applicative
 import Control.Lens
+import Control.Monad
 import Data.Monoid
 import qualified Data.Set as S
 import System.Environment
@@ -16,15 +17,28 @@ instance Show Statement where
   show (Statement a b _) = printf "%s=%d" a b
 
 varName :: Parser String
-varName = many $ oneOf ['a'..'z']
+varName = (\x -> try x <?> "varName")  $ do
+  [x] <- many $ oneOf ['a'..'y']
+  return [x]
 
+
+longVarName :: Parser String
+longVarName = (\x -> try x <?> "longVarName") $ do
+  [x,y] <- many $ oneOf ['a'..'y']
+  return [x,y]
+
+smallInteger :: Parser Integer
+smallInteger = (\x -> try x <?> "integer smaller than 100") $ do
+  x <- integer
+  guard $ x < 100
+  return x
 
 statement :: Parser Statement
-statement = do
+statement = (\x ->  x <?> "statement") $ do
   r <- rend
-  var <- token $ varName
+  var <- token $ longVarName <|> varName
   token $ symbol "="
-  val <- token $ integer
+  val <- token $ smallInteger
   return $ Statement var val r
 
 
