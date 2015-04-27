@@ -1,38 +1,96 @@
-{-# LANGUAGE RankNTypes, TypeSynonymInstances #-}
+{-# LANGUAGE RankNTypes, TypeSynonymInstances, ScopedTypeVariables #-}
 
 import Control.Applicative
 import Control.Monad
 
-data UmaiBo
+data B
+data A
+
+instance Functor NN where
+  fmap = liftM
+
+instance Applicative NN where
+  pure = return -- :: a -> NN a
+  (<*>) = ap    -- :: NN (a -> b) -> NN a -> NN b
+
+instance Monad NN where
+    return x = NN ($ x)
+    m >>= k  = NN $ \ c -> runNN m (\ x -> runNN (k x) c)
 
 
-type M a = (a -> UmaiBo) -> UmaiBo
+data NN a = NN {runNN :: (a -> B) -> B}
 
 
 
-exmid :: M (Either (a -> M b) a)
+exmid :: NN (Either (a -> NN B) a)
 exmid = exeither' exmid'
   where
     exmid' f g = either return g =<< callCC (\cc ->
                            return . Left =<< f (cc . Right))
     exeither' e = e (return . Left) (return . Right)
 
-    return x = ($x)
-    k =<< m  = \ c -> m (\ x -> (k x) c)
-    infixr 1 =<<
 
 
+{-
+
+callcc (
+   fun (k: (a, a->⊥) sum -> ⊥) ->
+         InRight (fun (x:a) -> k (InLeft x)))
+)
+-}
+
+-- midi :: forall a. NN (Either a (a -> NN B))
+-- midi = callCC <*> f
+--   where
+--     f :: (Either a (a -> NN B) -> NN B) -> NN (Either a (a -> NN B))
+--     f = undefined
+
+test :: NN Int -> NN Int
+test = \x -> (*2) <$> x
 
 
-callCC :: ((a -> M b) -> M a) -> M a
-callCC f =
-  \ c -> (f (\ x -> \ _ -> c x)) c
+callCC :: ((a -> NN B) -> NN a) -> NN a
+callCC f = NN $ \ c -> runNN (f (\ x -> NN $ \ _ -> c x)) c
+
+
+callCC2 :: ((A -> NN B) -> NN A) -> NN A
+callCC2 f = NN $ \ c -> runNN
+                        ((f :: (A -> NN B) -> NN A)
+                         (\ x -> NN $ \ _ -> c (x :: A))) (c :: A -> B)
+
+nn :: ((A -> B) -> B) -> NN A
+nn = NN
+
+callCC3 :: ((A -> NN B) -> NN A) -> NN A
+callCC3 f = NN $ \ c ->  runNN
+ ((f :: (A -> NN B) -> NN A)
+  (\ x -> NN $ \ _ -> c (x :: A))  :: NN A)
+     (c :: A -> B)
+
+
+-- exmidA :: forall a. NN (Either a (a -> B))
+-- exmidA = cccA <*> f
+--   where f :: NN ((Either a (a -> B) -> B) -> Either a (a -> B))
+--         f = undefined
+
+
+--cccA :: ((NN a -> NN B) -> NN a) -> NN a
+--cccA f = NN $ \ c -> runNN (f (\ x -> NN $ \ _ -> c x)) c
 
 
 data Stone
-data Gold
+type Life = B
+type Scroll = Stone -> Life
+type Greater = NN
 
-resp :: M (Either (Stone -> M Gold) Stone)
+
+
+cccA :: ((Stone -> NN B) -> Greater Stone) -> Greater Stone
+cccA f = NN $ \ c -> runNN (f (\ x -> NN $ \ _ -> c x)) c
+
+
+
+resp :: NN (Either (Stone -> Greater Life) Stone)
 resp = exmid
 
 
