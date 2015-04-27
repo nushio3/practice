@@ -6,7 +6,7 @@ import Control.Monad
 data UmaiBo
 
 
-data M a = (a -> UmaiBo) -> UmaiBo
+type M a = (a -> UmaiBo) -> UmaiBo
 
 
 
@@ -19,7 +19,7 @@ exmid = exeither' exmid'
 
     return x = ($x)
     k =<< m  = \ c -> m (\ x -> (k x) c)
-
+    infixr 1 =<<
 
 
 
