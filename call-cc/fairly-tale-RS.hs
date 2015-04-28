@@ -1,81 +1,39 @@
-{-# LANGUAGE RankNTypes, TypeSynonymInstances, RebindableSyntax #-}
+{-# LANGUAGE RankNTypes, TypeSynonymInstances, RebindableSyntax, ScopedTypeVariables #-}
 
 import Prelude hiding (return, (>>=), (=<<))
 
+data A
+data B
 
-data UmaiBo
+type Not a = a -> B
+type NN a = (a -> B) -> B
 
+callCC :: forall a .((a -> NN B) -> NN a) -> NN a
+callCC f = \ c -> (f (\ x -> \ _ -> c x)) c
 
-
-type M a = (a -> UmaiBo) -> UmaiBo
-
-return :: a -> M a
-return x = ($x)
-
-
-infixl 1 =<<
-(>>=) :: M a -> (a -> M b) -> M b
-m >>= k  = \ c -> m (\ x -> (k x) c)
-
-infixr 1 >>=
-k =<< m = m >>= k
-
-
-{-
-
-callcc (
-   fun (k: (a, a->⊥) sum -> ⊥) ->
-         InRight (fun (x:a) -> k (InLeft x)))
-)
-何をやってるかわからねーですが、要は、いったん "not (aまたはnot a) ならば (aまたはnot a)" という型のつくプログラム（これは頑張れば作れます）を作って、それに callccを適用しておしまい、という寸法でした。
-
--}
-
-
-
-midi :: M (Either (a -> M b) a)
-midi = callCC (3::Int)
-
-
-exmid :: M (Either (a -> M b) a)
-exmid = exeither' exmid'
+exmid :: NN (Either A (A -> NN B) )
+exmid = callCC f
   where
-    exmid' f g = either return g =<< callCC
-                 (\cc -> return . Left =<< f (cc . Right))
-    exeither' e = e (return . Left) (return . Right)
+    f k = \g -> g (Right (\x -> k (Left x)))
 
 
-callCC :: ((a -> M b) -> M a) -> M a
-callCC f =
-  \ c -> (f (\ x -> \ _ -> c x)) c
 
 
-data Stone
-data Gold
+type Stone = A
+type GodPower = B
+type ScrollOf a = a -> GodPower
+type Greater a = NN a
 
-resp :: M (Either (Stone -> M Gold) Stone)
-resp = exmid
+proof_ggg_eq_g :: Greater GodPower -> GodPower
+proof_ggg_eq_g f = f id
+
+cccA :: forall a. ((a -> Greater GodPower) -> Greater a) -> Greater a
+cccA = callCC
+
+response :: Greater (Either Stone (Stone -> Greater GodPower))
+response = exmid
 
 
-{-
-
--- "not (aまたはnot a) ならば (aまたはnot a)
-type Not a = a -> String
-
-ccc :: ((a -> b) -> a) -> a
-ccc = undefined
-
-hyper :: Not (Either a   (Not a )) -> (Either a  (Not a ))
-hyper = undefined
-
-super :: Either a  (Not a )
-super = ccc hyper
--}
-{-
-type N a = forall r. (a -> r) -> r
-callC2 :: ((a -> N b) -> N a) -> N a
-callC2 f = \c -> f (\x -> (\_ -> c x)) c
--}
 
 main :: IO ()
 main = print "hi"
