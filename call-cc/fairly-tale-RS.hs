@@ -16,9 +16,6 @@ exmid = callCC f
   where
     f k = \g -> g (Right (\x -> k (Left x)))
 
-
-
-
 type Stone = A
 type GodPower = B
 type ScrollOf a = a -> GodPower
