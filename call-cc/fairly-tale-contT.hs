@@ -49,11 +49,11 @@ exmid = do
 
 useTheWish :: Either USD1G (USD1G -> IOC Anything) -> IOC ()
 useTheWish e = case e of
-  Left u -> do
-    story $ "You got money: " ++ show u
-  Right f -> do
+  Left money -> do
+    story $ "You got money: " ++ show money
+  Right devil -> do
     story "You give the devil $1G to become a god"
-    (g :: Anything) <- f USD1G
+    (g :: Anything) <- devil USD1G
     story "You have become a omnipotent god"
     story $ "You know that the answer to everything is: " ++ show (unleash g :: Integer)
 

@@ -12,6 +12,11 @@ type NN a = (a -> B) -> B
 callCC :: forall a . ((a -> NN B) -> NN a) -> NN a
 callCC f = \ c -> (f (\ x -> \ _ -> c x)) c
 
+callCC' :: forall a . ((a -> NN B) -> NN a) -> NN a
+callCC' (f:: (a-> NN B) -> NN a) =
+  \ (c:: a -> B) -> (f (\ (x :: a) -> \ _ -> c x)) c
+
+
 exmid :: NN (Either Stone (Stone -> NN B) )
 exmid = callCC f
   where
