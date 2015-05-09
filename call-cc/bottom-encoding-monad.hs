@@ -1,26 +1,28 @@
 {-# LANGUAGE RankNTypes #-}
 import Control.Monad.Cont
-import Control.Monad.IO.Class
+import Control.Monad.Trans (lift)
+import Control.Monad.Writer
 
 newtype Bottom = Bottom { unleash :: forall a. a}
 
 type C = ContT Bottom
-type CIO = C IO
+type M = C (Writer String)
 
 data USD1G = USD1G deriving Show
 
-say = liftIO . putStrLn
+say x = lift $ tell $ x ++ "\n"
 
-runCIO :: CIO a -> IO ()
-runCIO m = runContT m (const $ return undefined) >> return ()
+runM :: M a -> String
+runM m = execWriter $
+  runContT m (const $ return undefined) >> return ()
 -- Are we sure that (undefined :: Bottom) above will never be used?
 
-exmid :: CIO (Either USD1G (USD1G -> CIO Bottom))
+exmid :: M (Either USD1G (USD1G -> M Bottom))
 exmid = callCC f
   where
      f k = return (Right (\x -> k (Left x)))
 
-useTheWish :: Either USD1G (USD1G -> CIO Bottom) -> CIO ()
+useTheWish :: Either USD1G (USD1G -> M Bottom) -> M ()
 useTheWish e = case e of
   Left money -> say $ "I got money:" ++ show money
   Right method -> do
@@ -29,8 +31,11 @@ useTheWish e = case e of
     say $ "I am now omnipotent! The answer to everything is:"
       ++ show (unleash unobtainium :: Integer)
 
+theStory :: String
+theStory = runM $ exmid >>= useTheWish
+
 main :: IO ()
-main = runCIO $ exmid >>= useTheWish
+main = putStrLn theStory
 
 {-
 > runhaskell bottom-encoding-monad.hs
