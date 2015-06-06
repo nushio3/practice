@@ -40,8 +40,13 @@ myPlugin = tracePlugin "my-plugin" $
 
 
 mySolver :: () -> [Ct] -> [Ct] -> [Ct] -> TcPluginM TcPluginResult
-mySolver () givens deriveds wanteds      = do
-   tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  givens
-   tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  deriveds
-   tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  wanteds
-   undefined
+mySolver () givens deriveds  wanteds      = do
+  tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  givens
+  tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  deriveds
+  tcPluginIO $ putStrLn $ showSDocUnsafe $ ppr  wanteds
+  return $ TcPluginOk [(mkEv w,w) | w <- wanteds] []
+  where
+    mkEv :: Ct -> EvTerm
+    mkEv ct = case classifyPredType $ ctEvPred $ ctEvidence ct of
+      ClassPred cls types -> undefined $ mkClassPred cls types
+      _               -> error "class ja nai"
