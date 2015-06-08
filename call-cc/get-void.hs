@@ -21,6 +21,14 @@ ep12 = do
   liftIO $ putStrLn "Madoka : I am god"
   liftIO $ putStrLn "Homura : Seriously?!"
 
+{-
+  let m :: ContT Void IO ()
+      m = return ()
+      f :: IO Void
+      f = runContT m $ \ _ -> f
+  v <- liftIO f
+  liftIO $ putStrLn $ "Madoka : For sure. The answer to everything = " ++ (show (absurd v :: Int))
+-}
 
 main :: IO ()
 main = getEff ep12

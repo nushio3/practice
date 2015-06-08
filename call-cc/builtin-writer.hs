@@ -40,5 +40,10 @@ ep12 = do
      tell "Madoka : Now I am god! I can do anything!"
      tell (show (absurd v :: Double))
 
+interceptVoid :: M Int
+interceptVoid = M $ \k -> let (v,_) = k 42 in (v,"The ansewr is:" ++ show (absurd v :: Double))
+
 main :: IO ()
-main = putStrLn $ getStory ep12
+main = do
+  putStrLn $ getStory ep12
+  putStrLn $ getStory interceptVoid
