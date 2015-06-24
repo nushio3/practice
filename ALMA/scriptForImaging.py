@@ -32,17 +32,13 @@
 print "# continuum subtraction (contsub)."
 os.system('rm -rf TWHydra_corrected.ms.cont')
 os.system('rm -rf TWHydra_corrected.ms.contsub')
-uvcontsub(vis='TWHydra_corrected.ms',fitorder=1,
-          fitspw='0:20~1500;1900~3800,1,2:20~2000;2400~3800,3',combine='spw',want_cont=True)
+uvcontsub(vis='TWHydra_corrected.ms',fitorder=1,          fitspw='0:20~1500;1900~3800,1,2:20~2000;2400~3800,3',combine='spw',want_cont=True)
 
 print "# averaging continuum."
 os.system('rm -rf TWHydra_cont.ms')
-split(vis='TWHydra_corrected.ms.cont',outputvis='TWHydra_cont.ms',
-      width=3840,datacolumn='data')
+split(vis='TWHydra_corrected.ms.cont',outputvis='TWHydra_cont.ms',    width=3840,datacolumn='data')
 
-plotms(vis='TWHydra_cont.ms',spw='0~3',xaxis='uvwave',yaxis='amp',
-       avgtime='1e8',avgscan=T,coloraxis='spw',xselfscale=T,
-       plotfile='cont_uvplot.png',overwrite=T)
+plotms(vis='TWHydra_cont.ms',spw='0~3',xaxis='uvwave',yaxis='amp', avgtime='1e8',avgscan=T,coloraxis='spw',xselfscale=T,  plotfile='cont_uvplot.png',overwrite=T)
 
 #######################################################################
 # Create Initial Clean Image
@@ -67,7 +63,17 @@ clean(vis='TWHydra_cont.ms',imagename='TWHydra_cont_clean',
       multiscale=[],
       interactive=F,threshold='90mJy',niter=10000)
 
-ia.open('TWHydra_cont_clean.image')
+
+
+
+clean(vis='TWHydra_cont.ms',imagename='TWHydra_cont_clean_manual', mode='mfs', imagermode='csclean', imsize=[512,512],cell=['0.1arcsec','0.1arcsec'],spw='',  weighting='briggs',robust=0.0, mask= 'circle [ [ 11h1m51.853s, -34.42.17.338] ,3arcsec ]',usescratch=False,  multiscale=[],  interactive=T,threshold='90mJy')
+
+
+
+
+
+
+ia.open('TWHydra_cont_clean2.image')
 stat_cont=ia.statistics(axes=[0,1],plotstats=['mean','median','sigma','rms'],
                         mask='mask(TWHydra_cont_clean.mask)',robust=T)
 ia.close()

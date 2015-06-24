@@ -26,15 +26,15 @@ int N_TILE_Y=512;
 int N_TILE_XI=32;
 int N_TILE_YI=32;
 
-int N_FUSION_0= 4;
+int N_FUSION_0= 6;
 int CELL2_CHOICE_0=0; // 0..8
 int CELL3_CHOICE_0=0; // 0..17
 int N_VECTOR_0=8;
 int N_UNROLL_0=4;
-int N_TILE_X_0=64;
-int N_TILE_Y_0=64;
+int N_TILE_X_0=1024;
+int N_TILE_Y_0=128;
 int N_TILE_XI_0=64;
-int N_TILE_YI_0=64;
+int N_TILE_YI_0=32;
 
 
 double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
@@ -76,23 +76,23 @@ double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
       cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);
       cell3[i_f].tile(xi,yi, xii, yii, N_TILE_XI, N_TILE_YI);
       if (not is_c_gen) cell3[i_f].vectorize(xii,N_VECTOR);
-      cell3[i_f].unroll(xii,N_UNROLL);
+      //cell3[i_f].unroll(xii,N_UNROLL);
 
     }
     else{
       //cell3[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);
-      cell3[i_f].store_at(cell3[N_FUSION-1], xi).compute_at(cell3[N_FUSION-1], xii);
+      //xxxx cell3[i_f].store_at(cell3[N_FUSION-1], xo).compute_at(cell3[N_FUSION-1], xii);
       if (not is_c_gen) cell3[i_f].vectorize(x,N_VECTOR);
-      cell3[i_f].unroll(x,N_UNROLL);
+      //xxxx cell3[i_f].unroll(x,N_UNROLL);
 
     }
 
 
     //cell2[i_f].tile(x,y, xo,yo, xi, yi, N_TILE_X, N_TILE_Y).fuse(xo,yo,nid).parallel(nid);    
-    cell2[i_f].store_at(cell3[N_FUSION-1], xi).compute_at(cell3[N_FUSION-1], xii);
+    //xxxx cell2[i_f].store_at(cell3[N_FUSION-1], xo).compute_at(cell3[N_FUSION-1], xii);
 
     if (not is_c_gen) cell2[i_f].vectorize(x,N_VECTOR);
-    cell2[i_f].unroll(x,N_UNROLL);
+    //xxxx cell2[i_f].unroll(x,N_UNROLL);
 
   }
 
@@ -107,7 +107,10 @@ double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
   if(is_c_gen){
     std::vector<Halide::Argument> arg_vect;
     arg_vect.push_back(Halide::Argument("inPar", true, Halide::Int(32)));
-    cell3[N_FUSION-1].compile_to_c("blur-fusion-gen.c", arg_vect, "main_compute");
+    std::ostringstream fn_str;
+    fn_str << "generated-bsf-NF_" << N_FUSION << ".c";
+    
+    cell3[N_FUSION-1].compile_to_c(fn_str.str().c_str(), arg_vect, "main_compute");
   }
 
 
@@ -162,7 +165,7 @@ int main2(){
   size_t nx = 2048;
   size_t ny = 2048;
 
-  double deltaT = bench(true,nx,ny,1);
+  double deltaT = bench(false,nx,ny,1);
   if (deltaT > 20) return 0;
   
 
@@ -210,6 +213,7 @@ int main2(){
 
 int main(int argc, char **argv) {
   srand(time(NULL));
+  bench(true,8192,8192,1024);
   for(;;) {
     N_TILE_X=1<<irand(11);
     N_TILE_Y=1<<irand(11);

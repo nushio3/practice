@@ -1,0 +1,7 @@
+#!/bin/sh
+
+while :
+do
+    runhaskell $1
+    inotifywait -e modify $1
+done

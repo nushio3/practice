@@ -1,0 +1,27 @@
+\documentclass[natbib]{article}
+
+\begin{document}
+
+Hello world.
+
+
+You can embed Haskell expressions in scope into LaTeX, using
+the {\tt \#\{\}}
+and
+{\tt @\{\}}  brace syntaxes.
+The former syntax,
+ {\tt \#\{val\}}, converts the {\tt val} into string
+and then embeds it. The {\tt Show} instance of the type of the value is 
+used for the conversion.
+The latter,  {\tt @\{val\}}, interprets {\tt val} as a
+
+The {\tt authoring} package, toghether with other Haskell packages,
+make a step forward to assisting scientific research in Haskell.
+One of such synergetic package is 
+quantity calculus package {\tt units} by
+@{cite ["special:units"]}.
+
+\bibliographystyle{abbrvnat}
+\bibliography{references}
+
+\end{document}

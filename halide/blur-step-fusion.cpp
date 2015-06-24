@@ -128,7 +128,7 @@ double bench(bool is_c_gen, int NX, int NY, int MAX_T) {
   if(is_c_gen){
     std::vector<Halide::Argument> arg_vect;
     arg_vect.push_back(Halide::Argument("inPar", true, Halide::Int(32)));
-    cell3[N_FUSION-1].compile_to_c("blur-fusion-gen.c", arg_vect, "main_compute");
+    cell3[N_FUSION-1].compile_to_c("generated-bsf-1.c", arg_vect, "main_compute");
   }
 
 
@@ -183,7 +183,7 @@ int main2(){
   size_t nx = 1024;
   size_t ny = 1024;
 
-  double deltaT = bench(true,nx,ny,1);
+  double deltaT = bench(false,nx,ny,1);
   if (deltaT > 20) return 0;
   
 
@@ -226,6 +226,8 @@ int main2(){
 
 int main(int argc, char **argv) {
   srand(time(NULL));
+  reset_params(); bench(true,2048,2048,8192);
+
   for(;;) {
     N_FUSION_0=1<<irand(6);
     CELL2_CHOICE_0=irand(9);
