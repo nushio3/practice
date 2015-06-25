@@ -92,7 +92,7 @@ for epoch in xrange(1, n_epoch+1):
         preds.extend(cuda.to_cpu(pred.data))
         sum_loss     += float(cuda.to_cpu(loss.data)) * batchsize
     pearson = np.corrcoef(np.asarray(preds).reshape(len(preds),), np.asarray(y_test).reshape(len(preds),))
-    
+
 
     print 'test  mean loss={0}, corrcoef={1}'.format(
         sum_loss / N_test, pearson[0][1])
