@@ -8,6 +8,8 @@ import chainer.functions  as F
 parser = argparse.ArgumentParser(description='Chainer Optimizer Test')
 parser.add_argument('--optimizer', '-o', default='SGD',
                     help='Name of the optimizer function')
+parser.add_argument('--instance', '-i', default='',
+                    help='Experiment instance')
 args = parser.parse_args()
 
 N=20
@@ -62,7 +64,7 @@ optimizer.setup(model.collect_parameters())
 
 
 system('mkdir -p result')
-log_filename = 'result/log-{}.txt'.format(args.optimizer)
+log_filename = 'result/log-{}-{}.txt'.format(args.optimizer,args.instance)
 system('rm {}'.format(log_filename))
 
 for t in range(0,60000):
@@ -77,7 +79,7 @@ for t in range(0,60000):
         fp.write('{} {}\n'.format(t,potential.data[0][0]))
     if (t%100==0) :
         print '{} {} {}'.format(args.optimizer,t,potential.data[0][0])
-        snapshot_filename = 'result/{}-{:06d}.txt'.format(args.optimizer, t)
+        snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(args.optimizer,args.instance, t)
         with open(snapshot_filename, "w") as fp:
             for i in range(N):
                 fp.write('{} {}\n'.format(model.lx.W[0][i], model.ly.W[0][i]))
