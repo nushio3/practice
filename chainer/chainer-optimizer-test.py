@@ -55,7 +55,7 @@ while True:
     )
     potential = forward(model).data[0][0]
     print 'candidate:{}'.format(potential)
-    if (potential>-0.1 and potential<0) :
+    if (potential>0 and potential<0.1) :
         break
 
 optimizer = eval('optimizers.{}()'.format(args.optimizer))
