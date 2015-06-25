@@ -65,7 +65,7 @@ system('mkdir -p result')
 log_filename = 'result/log-{}.txt'.format(args.optimizer)
 system('rm {}'.format(log_filename))
 
-for t in range(0,60000)
+for t in range(0,60000):
     optimizer.zero_grads()
     potential = forward(model)
     potential.backward()
@@ -75,7 +75,7 @@ for t in range(0,60000)
     # print potential.data
     with open(log_filename, "a") as fp:
         fp.write('{} {}\n'.format(t,potential.data[0][0]))
-    if (t%100==0 or t==1) :
+    if (t%100==0) :
         print '{} {} {}'.format(args.optimizer,t,potential.data[0][0])
         snapshot_filename = 'result/{}-{:06d}.txt'.format(args.optimizer, t)
         with open(snapshot_filename, "w") as fp:
