@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import subprocess
 import numpy as np
 from chainer import cuda, Variable, FunctionSet, optimizers
 import chainer.functions  as F
@@ -11,6 +12,8 @@ args = parser.parse_args()
 
 N=20
 
+def system(cmd):
+    subprocess.call(cmd, shell=True)
 
 def dist2(p1, p2):
     (x1,y1) = p1
@@ -58,12 +61,11 @@ optimizer.setup(model.collect_parameters())
 
 
 
-# system('mkdir -p result')
+system('mkdir -p result')
 log_filename = 'result/log-{}.txt'.format(args.optimizer)
-# system('rm {}'.format(log_filename))
+system('rm {}'.format(log_filename))
 
-t = 0
-while True:
+for t in range(0,60000)
     optimizer.zero_grads()
     potential = forward(model)
     potential.backward()
@@ -71,7 +73,6 @@ while True:
     # print model.lx.W
     # print model.ly.W
     # print potential.data
-    t+=1
     with open(log_filename, "a") as fp:
         fp.write('{} {}\n'.format(t,potential.data[0][0]))
     if (t%100==0 or t==1) :
