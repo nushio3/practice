@@ -18,12 +18,6 @@ exmid = callCC f
   where
     f k = return (Right (\x -> k (Left x)))
 
-getStory :: forall a. M a -> String
-getStory k = snd $ unM k f
-  where
-    f :: (a -> (Void, String))
-    f = (\ _ -> let (v,_) = unM k f in (v,""))
-
 ep12 :: M ()
 ep12 = do
   tell "Madoka : Watashi Kami Ni Naru\n"
@@ -39,6 +33,13 @@ ep12 = do
      v <- k 100
      tell "Madoka : Now I am god! I can do anything!"
      tell (show (absurd v :: Double))
+getStory :: forall a. M a -> String
+
+getStory k = snd $ unM k f
+  where
+    f :: (a -> (Void, String))
+    f = (\ _ -> let (v,_) = unM k f in (v,""))
+
 
 interceptVoid :: M Int
 interceptVoid = M $ \k -> let (v,_) = k 42 in (v,"The ansewr is:" ++ show (absurd v :: Double))
