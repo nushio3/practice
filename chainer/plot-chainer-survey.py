@@ -12,7 +12,8 @@ color="#80cc00 #00cc80 #00ff00 #ff0000 #0000ff #800000".split()
 
 for o in range(6):
     for i in range(6):
-        plot = '"result/log-{}-{}.txt" w l lc rgb "{}" t ""'.format(optimizers[o],i,color[o])
+        titlestr =  optimizers[o] if i==0 else ''
+        plot = '"result/log-{}-{}.txt" w l lc rgb "{}" t "{}"'.format(optimizers[o],i,color[o],titlestr)
         plots += [plot]
 
 with open("tmp.gnu", "w") as fp:
