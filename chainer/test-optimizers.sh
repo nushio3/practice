@@ -3,7 +3,7 @@
 ./chainer-optimizer-test.py -i 3 -o Adam &
 ./chainer-optimizer-test.py -i 3 -o MomentumSGD &
 ./chainer-optimizer-test.py -i 3 -o RMSprop &
-./chainer-optimizer-test.py -i 3 -o SGD &
+./chainer-optimizer-test.py -i 3 -o SGD &         
 
 ./chainer-optimizer-test.py -i 4 -o AdaDelta &
 ./chainer-optimizer-test.py -i 4 -o AdaGrad &
