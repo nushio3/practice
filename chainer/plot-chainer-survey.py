@@ -8,7 +8,7 @@ def system(cmd):
 optimizers = "AdaDelta AdaGrad Adam MomentumSGD RMSprop SGD".split()
 
 plots = []
-color="#ff0000 #ff4040 #ff8080 #80ff00 #0000ff #00ff00".split()
+color="#80cc00 #00cc80 #00ff00 #ff0000 #0000ff #800000".split()
 
 for o in range(6):
     for i in range(6):
