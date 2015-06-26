@@ -16,3 +16,5 @@ main = do
 
   putStrLn "main -O1"
   putStrLn $ showGraph show $ body $ optimize $ Proc "aaaa" prog1
+
+  print theLabel

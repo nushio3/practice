@@ -91,3 +91,9 @@ optimize :: Proc -> Proc
 optimize proc = runSimpleUniqueMonad $ runWithFuel 9999 $ do
   (g,_,_) <- analyzeAndRewriteBwd livePass (JustC [onlyOneLabel]) (body proc) mapEmpty
   return proc{body=g}
+
+getLabel :: M Label
+getLabel = freshLabel
+
+theLabel :: Label
+theLabel = runSimpleUniqueMonad $ runWithFuel 9999 $ getLabel
