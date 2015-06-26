@@ -21,7 +21,8 @@ with open("tmp.gnu", "w") as fp:
 set term postscript enhanced color eps solid 20
 set out "optimization-progress.eps"
 set grid
-set yrange  [-40:0]
+set key bottom left
+set yrange  [-50:0]
 plot {plotsH}
 """.format(plotsH = ','.join(plots)))
 
