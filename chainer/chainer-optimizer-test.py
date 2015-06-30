@@ -97,8 +97,6 @@ while True:
     if (potential>0 and potential<0.1) :
         break
 
-
-
 optimizer = eval('optimizers.{}()'.format(args.optimizer))
 optimizer.setup(model.collect_parameters())
 
