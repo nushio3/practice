@@ -12,8 +12,16 @@ parser.add_argument('--optimizer', '-o', default='SGD',
                     help='Name of the optimizer function')
 parser.add_argument('--instance', '-i', default='',
                     help='Experiment instance')
-global args
+parser.add_argument('--popsize', '-p', default='',
+                    help='Population size (for those optimizers that supports)')
+global args,popsize
 args = parser.parse_args()
+
+if args.popsize != '':
+    popsize = int(args.popsize)
+else:
+    popsize = 15
+
 
 N=20
 
@@ -38,20 +46,21 @@ def potential_function(pos):
     return potential
 
 def forward_plain(vs):
-    global t,args
+    global t,args,popsize
     pos = [[]]*N
     for i in range(N):
         pos[i] = (vs[i], vs[N+i])
     ret = potential_function(pos)
-    if (t%15==0) :
-         with open(log_filename, "a") as fp:
-             fp.write('{} {}\n'.format(t,ret))
-    if (t%1500==0) :
-         # print '{} {} {}'.format(args.optimizer,t,ret)
-         snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(args.optimizer,args.instance, t)
-         with open(snapshot_filename, "w") as fp:
-             for i in range(N):
-                 fp.write('{} {}\n'.format(vs[i],vs[N+i]))
+    if (t%popsize==0) :
+        log_filename = 'result/log-{}{}-{}.txt'.format(args.optimizer,popsize,args.instance)
+        with open(log_filename, "a") as fp:
+            fp.write('{} {}\n'.format(t/popsize,ret))
+    if (t%(100*popsize)==0) :
+        # print '{} {} {}'.format(args.optimizer,t,ret)
+        snapshot_filename = 'result/{}{}-{}-{:06d}.txt'.format(args.optimizer,popsize,args.instance, t/popsize)
+        with open(snapshot_filename, "w") as fp:
+            for i in range(N):
+                fp.write('{} {}\n'.format(vs[i],vs[N+i]))
     t=t+1
     return ret
 
@@ -82,7 +91,7 @@ if args.optimizer=='cmaes' :
     init_state=range(2*N)
     for i in range(2*N):
         init_state[i] = 60.0*random.random()-30.0
-    cma.fmin(forward_plain,init_state, 1)
+    cma.fmin(forward_plain,init_state, 1, popsize=50)
     sys.exit()
 
 model=()
