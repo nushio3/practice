@@ -43,15 +43,15 @@ def forward_plain(vs):
     for i in range(N):
         pos[i] = (vs[i], vs[N+i])
     ret = potential_function(pos)
-#     if (t%10==0) :
-#         with open(log_filename, "a") as fp:
-#             fp.write('{} {}\n'.format(t,ret))
-#     if (t%1000==0) :
-#         # print '{} {} {}'.format(args.optimizer,t,ret)
-#         snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(args.optimizer,args.instance, t)
-#         with open(snapshot_filename, "w") as fp:
-#             for i in range(N):
-#                 fp.write('{} {}\n'.format(vs[i],vs[N+i]))
+    if (t%15==0) :
+         with open(log_filename, "a") as fp:
+             fp.write('{} {}\n'.format(t,ret))
+    if (t%1500==0) :
+         # print '{} {} {}'.format(args.optimizer,t,ret)
+         snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(args.optimizer,args.instance, t)
+         with open(snapshot_filename, "w") as fp:
+             for i in range(N):
+                 fp.write('{} {}\n'.format(vs[i],vs[N+i]))
     t=t+1
     return ret
 
