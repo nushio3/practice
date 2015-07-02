@@ -1,7 +1,11 @@
 import Control.Monad
+import Data.Void
 import Pipes
 import Pipes.Prelude as P
 
+data USD = USD1G deriving (Show)
+
+type Contract = Either USD1G (USD1G -> Pipe () Void IO ())
 
 contract :: Pipe Int Int IO ()
 contract = do
