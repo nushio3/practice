@@ -9,8 +9,16 @@ V(i)=0.01 \cdot {x_i}^2+{y_i}^2
 d(i,j)=\sqr{(x_i-x_j)^2+(y_i-y_j)^2}
 ```
 
+Chainerを呼び出しているソースはこれ https://github.com/nushio3/practice/blob/chainer-test/chainer/chainer-optimizer-test.py
+`potential_function`という関数が、cmaes用の普通のpythonの浮動小数点値の関数としても、chainer経由で自動微分されるVariableの関数としても、まったく同一のソースコードで使いまわせるのがすばらしい。
+
+
+全手法の比較
 
 ![img](https://raw.githubusercontent.com/nushio3/practice/chainer-test/chainer/optimization-progress.png)
+
+
+以下、各最適化器にたいして、最大・最小の最適化結果となったものの挙動を掲載する。
 
 AdaDelta
 ---
