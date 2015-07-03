@@ -28,3 +28,4 @@ plot {plotsH}
 """.format(plotsH = ','.join(plots)))
 
 system("gnuplot tmp.gnu")
+system("ps2pdf optimization-progress.eps")

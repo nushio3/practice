@@ -6,10 +6,14 @@ result_dir = 'result-2015-06-29'
 
 candidates=[]
 
-for o in "cmaes AdaDelta AdaGrad Adam MomentumSGD RMSprop SGD".split():
+# for o in "cmaes AdaDelta AdaGrad Adam MomentumSGD RMSprop SGD".split():
+
+for o in "RMSprop".split():
     ranking = []
     for i in range(6):
+        i = 'DUAL_RAND'
         fn = '{}/log-{}-{}.txt'.format(result_dir, o, i)
+        print fn
         p = subprocess.Popen('tail -n 1 {}'.format(fn), shell=True, stdout=subprocess.PIPE)
         stdout_str, stderr_str = p.communicate()
         time_str, score_str = stdout_str.split()
@@ -24,6 +28,8 @@ print candidates
 
 for (score, o, i) in candidates:
 
+    o='RMSpropAdaGrad'
+
     fn = '{}/log-{}-{}.txt'.format(result_dir, o, i)
     print fn
     with open("tmp.gnu", "w") as fp:
@@ -32,6 +38,7 @@ for (score, o, i) in candidates:
         set out '{pngfn}'
         set grid
         set title '{fn}'
+        set yrange[:0]
         set xlabel 'iteration'
         set ylabel 'score'
         plot '{fn}' w l lw 2 t ''

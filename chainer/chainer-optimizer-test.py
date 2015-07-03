@@ -4,12 +4,14 @@ import subprocess
 import numpy as np
 from chainer import cuda, Variable, FunctionSet, optimizers
 import chainer.functions  as F
-import cma, random
+import annealing, cma, random
 import sys
 
 parser = argparse.ArgumentParser(description='Chainer Optimizer Test')
 parser.add_argument('--optimizer', '-o', default='SGD',
                     help='Name of the optimizer function')
+parser.add_argument('--optimizer2', '-2', default='AdaGrad',
+                    help='Name of the dual optimizer function')
 parser.add_argument('--instance', '-i', default='',
                     help='Experiment instance')
 parser.add_argument('--popsize', '-p', default='',
@@ -20,7 +22,10 @@ args = parser.parse_args()
 if args.popsize != '':
     popsize = int(args.popsize)
 else:
-    popsize = 15
+    if args.optimizer=='cmaes':
+        popsize = 15
+    else:
+        popsize = 10
 
 
 N=20
@@ -94,6 +99,14 @@ if args.optimizer=='cmaes' :
     cma.fmin(forward_plain,init_state, 1, popsize=50)
     sys.exit()
 
+if args.optimizer=='annealing' :
+    init_state=range(2*N)
+    for i in range(2*N):
+        init_state[i] = 60.0*random.random()-30.0
+    annealing.annealing(forward_plain,init_state,popsize)
+    sys.exit()
+
+
 model=()
 
 while True:
@@ -103,28 +116,57 @@ while True:
     )
     potential = forward(model).data[0][0]
     print 'candidate:{}'.format(potential)
-    if (potential>0 and potential<0.1) :
+    if (potential>0 and potential<1) :
         break
 
 optimizer = eval('optimizers.{}()'.format(args.optimizer))
 optimizer.setup(model.collect_parameters())
+optimizer2 = False
+if args.optimizer2 != '':
+    optimizer2 = eval('optimizers.{}()'.format(args.optimizer2))
+    optimizer2.setup(model.collect_parameters())
 
 
-
+optimizer_switch = False
 
 for t in range(0,60000):
-    optimizer.zero_grads()
-    potential = forward(model)
-    potential.backward()
-    optimizer.update()
+    if optimizer2==False:
+        optimizer.zero_grads()
+        potential = forward(model)
+        potential.backward()
+        optimizer.update()
+    else:
+        if optimizer_switch:
+            optimizer.zero_grads()
+            potential = forward(model)
+            potential.backward()
+            optimizer.update()
+        else:
+            optimizer2.zero_grads()
+            potential = forward(model)
+            potential.backward()
+            optimizer2.update()
+        if random.random()<0.003:
+            optimizer_switch=not optimizer_switch
+            print optimizer_switch
+
+            # reset the optimizer
+            optimizer = eval('optimizers.{}()'.format(args.optimizer))
+            optimizer2 = eval('optimizers.{}()'.format(args.optimizer2))
+            optimizer.setup(model.collect_parameters())
+            optimizer2.setup(model.collect_parameters())
+
     # print model.lx.W
     # print model.ly.W
     # print potential.data
+
+    optTag = args.optimizer+ args.optimizer2
+
     with open(log_filename, "a") as fp:
         fp.write('{} {}\n'.format(t,potential.data[0][0]))
     if (t%100==0) :
-        print '{} {} {}'.format(args.optimizer,t,potential.data[0][0])
-        snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(args.optimizer,args.instance, t)
+        print '{} {} {}'.format(optTag,t,potential.data[0][0])
+        snapshot_filename = 'result/{}-{}-{:06d}.txt'.format(optTag,args.instance, t)
         with open(snapshot_filename, "w") as fp:
             for i in range(N):
                 fp.write('{} {}\n'.format(model.lx.W[0][i], model.ly.W[0][i]))
