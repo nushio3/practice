@@ -28,7 +28,6 @@ print candidates
 
 for (score, o, i) in candidates:
 
-    o='RMSpropAdaGrad'
 
     fn = '{}/log-{}-{}.txt'.format(result_dir, o, i)
     print fn
@@ -46,7 +45,12 @@ for (score, o, i) in candidates:
         """.format(fn=fn, pngfn=fn.replace('.txt','.png')))
     subprocess.call('gnuplot tmp.gnu',shell=True)
 
+
+    o='RMSpropAdaGrad'
     cmd = 'ls {}/{}-{}-*.txt'.format(result_dir, o, i)
+
+
+
 
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     stdout_str, stderr_str = p.communicate()
