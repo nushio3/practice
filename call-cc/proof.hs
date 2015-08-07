@@ -1,6 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-
 推理 :: forall 新幹線 在来線 米原を通る.
   (Either 新幹線 在来線, 新幹線 -> 米原を通る, 在来線 -> 米原を通る) -> 米原を通る
 推理 (x :: Either 新幹線 在来線,

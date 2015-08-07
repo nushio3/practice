@@ -7,7 +7,7 @@ import math
 import sys
 import subprocess
 import time
-
+import re
 import numpy as np
 import six
 
@@ -20,18 +20,20 @@ n_epoch = 100     # number of epochs
 n_units = 650    # number of units per layer
 batchsize = 1    # minibatch size
 bprop_len = 100   # length of truncated BPTT
-grad_clip = 5    # gradient norm threshold to clip
+grad_clip = 500    # gradient norm threshold to clip
 n_inputs = 1
 n_outputs = 1
-log_filename = 'lstm_sin_log.txt'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
+parser.add_argument('--optimizer', '-o', default='SGD',
+                    help='Name of the optimizer function')
 args = parser.parse_args()
 mod = cuda if args.gpu >= 0 else np
 
-subprocess.call('rm '+log_filename, shell=True)
+log_filename = 'lstm_sinR_{}_log.txt'.format(args.optimizer)
+subprocess.call("rm '{}'".format(log_filename), shell=True)
 
 model = chainer.FunctionSet(embed=F.Linear(n_inputs, n_units),
                             l1_x=F.Linear(n_units, 4 * n_units),
@@ -45,10 +47,12 @@ if args.gpu >= 0:
     cuda.init(args.gpu)
     model.to_gpu()
 
-    # Setup optimizer
-optimizer = optimizers.SGD(lr=1.)
+# Setup optimizer
+optimizer_expr = args.optimizer
+if not re.search('\(',optimizer_expr):
+    optimizer_expr = 'optimizers.{}()'.format(optimizer_expr)
+optimizer = eval(optimizer_expr)
 optimizer.setup(model.collect_parameters())
-
 
 def forward_one_step(x_data, state, train=True):
     if args.gpu >= 0:
@@ -73,13 +77,16 @@ def make_initial_state(batchsize=batchsize, train=True):
 
 t=0
 state = make_initial_state()
+last_y=0
 for i0 in range(n_epoch * bprop_len):
     accum_loss = chainer.Variable(mod.zeros((), dtype=np.float32))
 
     t+=0.1
-    x_data = [0.0]
-    y = math.sin(t) + 2*math.sin(math.sqrt(0.5)*t) + 3*math.sin(t/math.sqrt(3))
+    x_data = [last_y]
+    y = math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
+    #y = math.sin(t) + 2*math.sin(2*t) + 3*math.sin(t*3)
     y_data = [y]
+    last_y=y
     x_batch = np.array([x_data], dtype=np.float32)
     y_batch = np.array([y_data], dtype=np.float32)
 
