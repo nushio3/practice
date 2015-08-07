@@ -85,18 +85,16 @@ def curve(t):
 t=0
 state = make_initial_state()
 state_test = make_initial_state(train=False)
-last_y=0
 dt = 0.1
 predict_dt = 1.0
 for i0 in range(n_epoch * bprop_len):
     accum_loss = chainer.Variable(mod.zeros((), dtype=np.float32))
 
     t+=dt
-    y = curve(t)
-    x_data = [y] #[last_y]
+    x = curve(t)
+    x_data = [x]
     future_y = curve(t+predict_dt)
     y_data = [future_y]
-    last_y=y
     x_batch = np.array([x_data], dtype=np.float32)
     y_batch = np.array([y_data], dtype=np.float32)
     x = chainer.Variable(x_batch)
@@ -111,7 +109,7 @@ for i0 in range(n_epoch * bprop_len):
     state_test, y_test = forward_one_step(x_volatile, state_test,train=False)
 
     with open(log_filename,'a') as fp:
-        msg = '{} {} {} {} {}'.format(t, y, y_truth.data[0,0], y_pred.data[0,0], y_test.data[0,0])
+        msg = '{} {} {} {} {}'.format(t, x.data[0,0], y_truth.data[0,0], y_pred.data[0,0], y_test.data[0,0])
         print msg
         fp.write(msg+'\n')
 
@@ -128,10 +126,10 @@ for i0 in range(n_epoch * bprop_len):
         t2+=dt
         x_data = [curve(t2)]
         x2 = np.array([x_data], dtype=np.float32)
-        x2 = chainer.Variable(x_batch,volatile=True)
+        x2 = chainer.Variable(x2,volatile=True)
         state2,y2 = forward_one_step(x2, state2, train=False)
     with open(prediction_filename,'a') as fp:
-        msg = '{} {}'.format(t2, y2.data[0,0])
+        msg = '{} {}'.format(t+2*predict_dt, y2.data[0,0])
         fp.write(msg+'\n')
 
     if t < 100:
