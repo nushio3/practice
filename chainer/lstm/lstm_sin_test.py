@@ -55,15 +55,19 @@ optimizer = eval(optimizer_expr)
 optimizer.setup(model.collect_parameters())
 
 def forward_one_step(x_data, state, train=True):
+    drop_ratio = 0.1
     if args.gpu >= 0:
         x_data = cuda.to_gpu(x_data)
     x = chainer.Variable(x_data, volatile=not train)
     h0 = model.embed(x)
-    h1_in = model.l1_x(F.dropout(h0, train=train)) + model.l1_h(state['h1'])
+    h1_in = model.l1_x(F.dropout(h0,ratio=drop_ratio, train=train)) + model.l1_h(state['h1'])
     c1, h1 = F.lstm(state['c1'], h1_in)
-    h2_in = model.l2_x(F.dropout(h1, train=train)) + model.l2_h(state['h2'])
+
+    h2_in = model.l2_x(F.dropout(h1,ratio=drop_ratio, train=train)) + model.l2_h(state['h2'])
     c2, h2 = F.lstm(state['c2'], h2_in)
-    y = model.l3(F.dropout(h2, train=train))
+
+
+    y = model.l3(F.dropout(h2,ratio=drop_ratio, train=train))
     state = {'c1': c1, 'h1': h1, 'c2': c2, 'h2': h2}
     return state, y
 
@@ -77,6 +81,7 @@ def make_initial_state(batchsize=batchsize, train=True):
 
 t=0
 state = make_initial_state()
+state_test = make_initial_state(train=False)
 last_y=0
 for i0 in range(n_epoch * bprop_len):
     accum_loss = chainer.Variable(mod.zeros((), dtype=np.float32))
@@ -96,8 +101,10 @@ for i0 in range(n_epoch * bprop_len):
     loss_i = F.mean_squared_error(y_pred, y_truth)
     accum_loss += loss_i
 
+    state_test, y_test = forward_one_step(x_batch, state_test,train=False)
+
     with open(log_filename,'a') as fp:
-        msg = '{} {} {}'.format(t, y_truth.data[0,0], y_pred.data[0,0])
+        msg = '{} {} {} {}'.format(t, y_truth.data[0,0], y_pred.data[0,0], y_test.data[0,0])
         print msg
         fp.write(msg+'\n')
 
