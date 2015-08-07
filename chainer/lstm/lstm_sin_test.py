@@ -32,7 +32,7 @@ parser.add_argument('--optimizer', '-o', default='SGD',
 args = parser.parse_args()
 mod = cuda if args.gpu >= 0 else np
 
-log_filename = 'lstm_sinR_{}_log.txt'.format(args.optimizer)
+log_filename = 'lstm_sinGen_{}_log.txt'.format(args.optimizer)
 subprocess.call("rm '{}'".format(log_filename), shell=True)
 
 model = chainer.FunctionSet(embed=F.Linear(n_inputs, n_units),
@@ -55,7 +55,7 @@ optimizer = eval(optimizer_expr)
 optimizer.setup(model.collect_parameters())
 
 def forward_one_step(x_data, state, train=True):
-    drop_ratio = 0.1
+    drop_ratio = 0.5
     if args.gpu >= 0:
         x_data = cuda.to_gpu(x_data)
     x = chainer.Variable(x_data, volatile=not train)
@@ -78,6 +78,9 @@ def make_initial_state(batchsize=batchsize, train=True):
                                    volatile=not train)
             for name in ('c1', 'h1', 'c2', 'h2')}
 
+def curve(t):
+    # math.sin(t) + 2*math.sin(2*t) + 3*math.sin(t*3)
+    return math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
 
 t=0
 state = make_initial_state()
@@ -87,10 +90,10 @@ for i0 in range(n_epoch * bprop_len):
     accum_loss = chainer.Variable(mod.zeros((), dtype=np.float32))
 
     t+=0.1
-    x_data = [last_y]
-    y = math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
-    #y = math.sin(t) + 2*math.sin(2*t) + 3*math.sin(t*3)
-    y_data = [y]
+    y = curve(t)
+    x_data = [y] #[last_y]
+    future_y = curve(t+1)
+    y_data = [future_y]
     last_y=y
     x_batch = np.array([x_data], dtype=np.float32)
     y_batch = np.array([y_data], dtype=np.float32)
@@ -104,11 +107,13 @@ for i0 in range(n_epoch * bprop_len):
     state_test, y_test = forward_one_step(x_batch, state_test,train=False)
 
     with open(log_filename,'a') as fp:
-        msg = '{} {} {} {}'.format(t, y_truth.data[0,0], y_pred.data[0,0], y_test.data[0,0])
+        msg = '{} {} {} {} {}'.format(t, y, y_truth.data[0,0], y_pred.data[0,0], y_test.data[0,0])
         print msg
         fp.write(msg+'\n')
 
-    if ((i0+1) % bprop_len == 0):
+    bprop_len_inner = 2 + i0 // 1000
+
+    if ((i0+1) % bprop_len_inner == 0):
         optimizer.zero_grads()
         accum_loss.backward()
         accum_loss.unchain_backward()
