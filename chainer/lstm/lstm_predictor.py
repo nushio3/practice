@@ -79,7 +79,8 @@ def make_initial_state(batchsize=batchsize, train=True):
             for name in ('c1', 'h1', 'c2', 'h2')}
 
 def curve(t):
-    return math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
+    # return math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
+    return math.sin(t) + 2*math.sin(2*t) + 3*math.sin(3*t)
 
 t=0
 state = make_initial_state()
@@ -99,7 +100,7 @@ for i0 in range(n_epoch * bprop_len):
     x_batch = np.array([x_data], dtype=np.float32)
     y_batch = np.array([y_data], dtype=np.float32)
     x = chainer.Variable(x_batch)
-    x_volatile = chainer.Variable(x_batch,volatile=False)
+    x_volatile = chainer.Variable(x_batch,volatile=True)
 
     y_truth = chainer.Variable(y_batch)
 
@@ -116,18 +117,22 @@ for i0 in range(n_epoch * bprop_len):
 
     """
     At this moment, neural network knows the information upto (t+predict_dt)
-    via teacher signal. If you really want to say that the NN can predict the future
+    via teacher signal. This means that, observational data upto (t+predict_dt)
+    is available to us. If you really want to say that the NN can predict the future
     at this moment, you need to predict curve(t+2*predict_dt) from now.
     """
     t2 = t
-    x2 = x_volatile
     state2 = state_test
+    y2 = None
     while t2 < t+predict_dt:
-        state2,x2 = forward_one_step(x2, state2, train=False)
         t2+=dt
+        x_data = [curve(t2)]
+        x2 = np.array([x_data], dtype=np.float32)
+        x2 = chainer.Variable(x_batch,volatile=True)
+        state2,y2 = forward_one_step(x2, state2, train=False)
     with open(prediction_filename,'a') as fp:
-        msg = '{} {}'.format(t2, x2.data[0,0])
-
+        msg = '{} {}'.format(t2, y2.data[0,0])
+        fp.write(msg+'\n')
 
     if t < 100:
         bprop_len_inner = 2
