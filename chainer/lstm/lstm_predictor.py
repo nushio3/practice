@@ -3,6 +3,7 @@
 Test Chainer LSTM on very simple data.
 """
 import argparse
+import hashlib
 import math
 import sys
 import subprocess
@@ -16,10 +17,10 @@ from chainer import cuda
 import chainer.functions as F
 from chainer import optimizers
 
-n_epoch = 100     # number of epochs
+n_iter = 10000     # number of iterations
 n_units = 650    # number of units per layer
 batchsize = 1    # minibatch size
-bprop_len = 100   # length of truncated BPTT
+bprop_len = 2   # length of truncated BPTT
 grad_clip = 500    # gradient norm threshold to clip
 n_inputs = 1
 n_outputs = 1
@@ -27,16 +28,30 @@ n_outputs = 1
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
-parser.add_argument('--optimizer', '-o', default='SGD',
+parser.add_argument('--optimizer', '-o', default='AdaGrad',
                     help='Name of the optimizer function')
+parser.add_argument('--optimizeroptions', '-p', default='()',
+                    help='Tuple of options to the optimizer')
+parser.add_argument('--filename', '-f', default='',
+                    help='Experiment filename tag')
+
 args = parser.parse_args()
 mod = cuda if args.gpu >= 0 else np
 
-log_filename = 'lstm_{}_current.txt'.format(args.optimizer)
-prediction_filename = 'lstm_{}_prediction.txt'.format(args.optimizer)
+print args
+
+filename_base = args.filename
+if filename_base=='':
+    filename_base = args.optimizer + "_" + hashlib.md5(str(args)).hexdigest()
+subprocess.call("mkdir result -p", shell=True)
+config_filename = 'result/{}_config.txt'.format(filename_base)
+log_filename = 'result/{}_current.txt'.format(filename_base)
+prediction_filename = 'result/{}_prediction.txt'.format(filename_base)
 for fn in [log_filename, prediction_filename]:
     subprocess.call("rm '{}'".format(fn), shell=True)
     print fn
+with open(config_filename, "w") as fp:
+    fp.write(str(args) + '\n')
 
 model = chainer.FunctionSet(embed=F.Linear(n_inputs, n_units),
                             l1_x=F.Linear(n_units, 4 * n_units),
@@ -51,9 +66,7 @@ if args.gpu >= 0:
     model.to_gpu()
 
 # Setup optimizer
-optimizer_expr = args.optimizer
-if not re.search('\(',optimizer_expr):
-    optimizer_expr = 'optimizers.{}()'.format(optimizer_expr)
+optimizer_expr = 'optimizers.{}{}'.format(args.optimizer, args.optimizeroptions)
 optimizer = eval(optimizer_expr)
 optimizer.setup(model.collect_parameters())
 
@@ -79,15 +92,22 @@ def make_initial_state(batchsize=batchsize, train=True):
             for name in ('c1', 'h1', 'c2', 'h2')}
 
 def curve(t):
-    # return math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
-    return math.sin(t) + 2*math.sin(2*t) + 3*math.sin(3*t)
+    #return math.sin(t) + 2*math.sin(math.sqrt(3)*t) + 3*math.sin(math.sqrt(10)*t)
+    o2= 20 * math.pi
+    a2 = 2
+    if t > o2:
+        a2 = 2 + 4*math.sin((t-o2)/200)
+    return math.sin(t) + a2*math.sin(2*t) + 3*math.sin(3*t)
+
+
 
 t=0
 state = make_initial_state()
 state_test = make_initial_state(train=False)
 dt = 0.1
 predict_dt = 1.0
-for i0 in range(n_epoch * bprop_len):
+sum_error = 0.0
+for i0 in range(n_iter):
     accum_loss = chainer.Variable(mod.zeros((), dtype=np.float32))
 
     t+=dt
@@ -129,17 +149,16 @@ for i0 in range(n_epoch * bprop_len):
         x2 = chainer.Variable(x2,volatile=True)
         state2,y2 = forward_one_step(x2, state2, train=False)
     with open(prediction_filename,'a') as fp:
-        msg = '{} {}'.format(t+2*predict_dt, y2.data[0,0])
+        msg = '{} {}'.format(t2+predict_dt, y2.data[0,0])
         fp.write(msg+'\n')
+    sum_error += (curve(t2+predict_dt) - y2.data[0,0])**2
 
-    if t < 100:
-        bprop_len_inner = 2
-    else:
-        bprop_len_inner = bprop_len
-
-    if ((i0+1) % bprop_len_inner == 0):
+    if ((i0+1) % bprop_len == 0):
         optimizer.zero_grads()
         accum_loss.backward()
         accum_loss.unchain_backward()
         optimizer.clip_grads(grad_clip)
         optimizer.update()
+
+with open(config_filename, "a") as fp:
+    fp.write("mean prediction error : {}\n".format(sum_error / n_iter))
