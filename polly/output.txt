@@ -1,0 +1,14 @@
+polly$ g++ -O3 mytest.c -o gcc.out
+polly$ pollycc -O3 -mllvm -polly -mllvm -polly-vectorizer=stripmine mytest.c -o polly-vector.out
+polly$ time ./gcc.out
+262144.000000
+
+real	0m8.123s
+user	0m8.093s
+sys	0m0.012s
+polly$ time ./polly-vector.out
+262144.000000
+
+real	0m18.887s
+user	0m18.849s
+sys	0m0.004s
