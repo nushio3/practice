@@ -1,14 +1,22 @@
 polly$ g++ -O3 mytest.c -o gcc.out
-polly$ pollycc -O3 -mllvm -polly -mllvm -polly-vectorizer=stripmine mytest.c -o polly-vector.out
 polly$ time ./gcc.out
 262144.000000
 
 real	0m8.123s
 user	0m8.093s
 sys	0m0.012s
+polly$ pollycc -O3 -mllvm -polly -mllvm -polly-vectorizer=stripmine mytest.c -o polly-vector.out
 polly$ time ./polly-vector.out
 262144.000000
 
 real	0m18.887s
 user	0m18.849s
 sys	0m0.004s
+polly$ pollycc -O3 -mllvm -polly -mllvm -polly-parallel -lgomp mytest.c -o polly-openmp.out
+polly$ time OMP_NUM_THREADS=8 ./polly-openmp.out
+262144.000000
+
+real	0m18.815s
+user	0m18.773s
+sys	0m0.004s
+polly$
