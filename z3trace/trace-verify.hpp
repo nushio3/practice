@@ -100,7 +100,7 @@ void prove_equality(string label_a, string label_b) {
         ofs << indent << "constrain $  isNormalFP " << v1 << endl;
       break;
     case Imm:
-      ofs << indent << "constrain $  " << v1 << "=" << x.lit << endl;
+      ofs << indent << "constrain $  " << v1 << ".==" << x.lit << endl;
       break;
     case Add:
       ofs << indent << "constrain $ " << v1 << ".==" << varname_of_ident(x.lhs) << "+" << varname_of_ident(x.rhs) << endl;
