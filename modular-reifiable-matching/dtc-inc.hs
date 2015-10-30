@@ -4,7 +4,7 @@ import Control.Lens
 
 data AddF fh ft x = Here (fh x) | There (ft x)
                                   deriving (Eq, Ord, Show, Functor)
-data MulF fh ft x = Prod (fh x) (ft x)
+data MulF fh ft x = These (fh x) (ft x)
                                   deriving (Eq, Ord, Show, Functor)
 type a :+ b = AddF a b
 type a :* b = MulF a b
@@ -14,15 +14,17 @@ infixr 7 :*
 
 data Fix f where
   In :: {mu :: f (Fix f)} -> Fix f
+deriving instance (Show (f (Fix f))) => Show (Fix f)
 
 fix :: Iso' (Fix f) (f (Fix f))
 fix = iso mu In
 
-type Matcher t = forall x. Matches t x => Prism' x (t x)
+-- The (+) part
+type AutoPrism t = forall x. Matches t x => Prism' x (t x)
 type Matches t x = MatchesF t x x
 
-class MatchesF t x a where
-  match :: Prism' a (t x)
+class MatchesF t x s where
+  match :: Prism' s (t x)
 
 instance MatchesF t x (t x) where
   match = simple
@@ -41,6 +43,40 @@ instance MatchesF t (Fix f) (f (Fix f)) => MatchesF t (Fix f) (Fix f) where
   match = fix . match
 
 
+-- The (*) part
+{- This is how we can construct values only using lenses:
+
+Prelude Control.Lens> let x = undefined & _1 .~ 2 & _2 .~ "hi":: (Int,String)
+Prelude Control.Lens> x
+(2,"hi")
+
+Yes, it risks partial computations, but we also do so in case of pattern matching,
+and also in Haskell we can leave records uninitialized.
+-}
+
+type AutoLens t = forall x. Has t x => Lens' x (t x)
+type Has t x = HasF t x x
+
+class HasF t x s where
+  have :: Lens' s (t x)
+
+instance HasF t x (t x) where
+  have = simple
+
+instance {-# OVERLAPPING #-} HasF t x (MulF t g x) where
+  have = let getter (These t0 _) = t0
+             setter (These _ tt) t0 = These t0 tt
+    in lens getter setter
+
+instance {-# OVERLAPPABLE #-} HasF t x (g x) => HasF t x (MulF f g x) where
+  have = let getter (These _ tt) = tt
+             setter (These t0 _) tt = These t0 tt
+    in lens getter setter . have
+
+instance HasF t (Fix f) (f (Fix f)) => HasF t (Fix f) (Fix f) where
+  have = fix . have
+
+
 -- The Base Functor
 data Nil x = Nil
              deriving (Eq, Ord, Show, Functor)
@@ -48,7 +84,7 @@ data Nil x = Nil
 -- The Value Functor
 data ValueF x = ValueF Int
              deriving (Eq, Ord, Show, Functor)
-value :: Matcher ValueF
+value :: AutoPrism ValueF
 value = match
 -- smart patterns
 pattern Value n <- ((^? value) -> Just (ValueF n)) where
@@ -59,7 +95,7 @@ pattern Value n <- ((^? value) -> Just (ValueF n)) where
 data TreeF x = BranchF [x]
              deriving (Eq, Ord, Show, Functor)
 type MatchesTree x = Matches TreeF x
-tree :: Matcher TreeF
+tree :: AutoPrism TreeF
 tree = match
 
 -- smart patterns
@@ -72,7 +108,7 @@ data ArithF x = ImmF Int | AddF x x | MulF x x
              deriving (Eq, Ord, Show, Functor)
 type MatchesArith x = Matches ArithF x
 
-arith :: Matcher ArithF
+arith :: AutoPrism ArithF
 arith = match
 
 -- smart patterns
@@ -83,14 +119,17 @@ pattern Add a b <- ((^? arith) -> Just (AddF a b)) where
 pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
   Mul a b = arith # MulF a b
 
-
-data TaggedF x = Tag String
+-- The tagging Functor
+data TagF x = TagF String
              deriving (Eq, Ord, Show, Functor)
+-- type HasTag x = Has TagF x
+-- tag :: AutoLens TagF
+-- tag = have
+--
+-- -- smart patterns
+-- pattern Tag t r <- ()
 
-type ExprF = TaggedF :* (TreeF :+ ArithF)
 
-
-deriving instance (Show (f (Fix f))) => Show (Fix f)
 
 type ArithExpr = Fix ArithF
 
@@ -103,10 +142,10 @@ type TV = Fix (TreeF :+ ValueF :+ Nil)
 atx :: ATExpr
 atx = In (Here (BranchF [In $ There $ Here $ ImmF 42]))
 
-type Expr = Fix (TaggedF :* (TreeF :+ ArithF))
+type Expr = Fix (TagF :* (TreeF :+ ArithF :+ Nil) :* Nil)
 
 expr :: Expr
-expr = In $ Prod (Tag "0:0") $ (There $ ImmF 42)
+expr = In $ These (TagF "0:0") $ These (There $ Here $ ImmF 42) Nil
 
 main :: IO ()
 main = do
