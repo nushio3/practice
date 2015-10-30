@@ -4,6 +4,17 @@ import Control.Lens
 
 data AddF fh ft x = Here (fh x) | There (ft x)
                                   deriving (Eq, Ord, Show, Functor)
+
+_Here :: Prism' (AddF fh ft x) (fh x)
+_Here = let f (Here x) = Just x
+            f _        = Nothing
+    in prism' Here f
+
+_There :: Prism' (AddF fh ft x) (ft x)
+_There = let f (There x) = Just x
+             f _        = Nothing
+    in prism' There f
+
 data MulF fh ft x = These (fh x) (ft x)
                                   deriving (Eq, Ord, Show, Functor)
 _These :: Iso' (MulF fh ft x) (fh x, ft x)
@@ -30,41 +41,22 @@ type Matches t x = MatchesF t x x
 class MatchesF t x s where
   match :: Prism' s (t x)
 
-instance MatchesF t x (t x) where
-  match = simple
-
 instance {-# OVERLAPPING #-} MatchesF t x (AddF t g x) where
-  match = let match2 (Here x) = Just x
-              match2 _        = Nothing
-    in prism' Here match2
+  match = _Here
 
 instance {-# OVERLAPPABLE #-} MatchesF t x (g x) => MatchesF t x (AddF f g x) where
-  match = let match2 (There x) = Just x
-              match2 _        = Nothing
-    in prism' There match2 . match
+  match = _There . match
 
 instance MatchesF t (Fix f) (f (Fix f)) => MatchesF t (Fix f) (Fix f) where
   match = fix . match
 
 
--- The (*) part
-type AutoPartition t1 t2 = forall x. Makes t1 t2 x => Iso' x (t1 x, t2 x)
-type Makes t1 t2 x = MakesF t1 t2 x x
+-- The (+) part interacting with (*) part
 
-class MakesF t1 t2 x s | t1 x s -> t2 where
-  partition :: Iso' s (t1 x,t2 x)
+instance {-# OVERLAPPABLE #-} MatchesF t x (f x) => MatchesF t x (MulF f Nil x) where
+  match = _These . iso fst (,Nil) . match
 
-instance MakesF t Nil x (t x) where
-  partition = iso (,Nil) fst
 
-instance {-# OVERLAPPING #-} MakesF t g x (MulF t g x) where
-  partition = _These
-instance {-# OVERLAPPABLE #-} MakesF t1 t2 x (g x) => MakesF t1 (MulF f t2) x (MulF f g x) where
-  partition = let shuffle :: Iso' (a,(b,c)) (b,(a,c))
-                  shuffle = iso (\(a,(b,c)) -> (b,(a,c))) (\(b,(a,c)) -> (a,(b,c)))
-         in _These . bimapping simple partition . shuffle . bimapping simple (from _These)
-instance MakesF t1 t2 (Fix f) (f (Fix f)) => MakesF t1 t2 (Fix f) (Fix f) where
-  partition = fix . partition
 
 -- The Base Functor
 data Nil x = Nil
@@ -112,16 +104,16 @@ pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
 data TagF x = TagF String
              deriving (Eq, Ord, Show, Functor)
 
-                      {-
-type MakesTag f x = Makes TagF f x
-tag :: AutoPartition TagF f
+{-
+type MakesTag x = Makes TagF x
+tag :: AutoPartition TagF
 tag = partition
 
 -- smart patterns
 pattern r :@ t <- (view tag -> (TagF t, r)) where
   r :@ t = view (from tag) (TagF t, r)
-
 -}
+
 
 type ArithExpr = Fix ArithF
 
@@ -139,16 +131,16 @@ type Expr = Fix (TagF :* (TreeF :+ ArithF :+ Nil) :* Nil)
 expr1 :: Expr
 expr1 = In $ These (TagF "0:0") $ These (There $ Here $ ImmF 42) Nil
 
--- expr2 :: Expr
--- expr2 = Imm 42 :@ "0:2"
-
 main :: IO ()
 main = do
   print "hi"
   print ax
   print atx
   print expr1
---   print expr2
+  print (view (fix . _These . _2 ._These . _1) expr1 )
+--  print $ expr1 & fix . _These . _2 ._These . _1 .~ Imm 30 -- This does not work.
+  print ""
+
   print $ (atx ^? arith :: Maybe (ArithF ATExpr))
   print $ (arith # ImmF 4242 :: ATExpr)
   print $ [atx ^? tree, Just (BranchF  [atx])]
