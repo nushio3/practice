@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DeriveFunctor, FlexibleContexts, FlexibleInstances, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, StandaloneDeriving, TypeOperators, UndecidableInstances, ViewPatterns #-}
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
 
 import Control.Lens
 
@@ -6,6 +6,10 @@ data AddF fh ft x = Here (fh x) | There (ft x)
                                   deriving (Eq, Ord, Show, Functor)
 data MulF fh ft x = These (fh x) (ft x)
                                   deriving (Eq, Ord, Show, Functor)
+_These :: Iso' (MulF fh ft x) (fh x, ft x)
+_These = iso (\(These t0 g0) -> (t0, g0)) (\(t0,g0) -> These t0 g0)
+
+
 type a :+ b = AddF a b
 type a :* b = MulF a b
 
@@ -44,38 +48,23 @@ instance MatchesF t (Fix f) (f (Fix f)) => MatchesF t (Fix f) (Fix f) where
 
 
 -- The (*) part
-{- This is how we can construct values only using lenses:
+type AutoPartition t1 t2 = forall x. Makes t1 t2 x => Iso' x (t1 x, t2 x)
+type Makes t1 t2 x = MakesF t1 t2 x x
 
-Prelude Control.Lens> let x = undefined & _1 .~ 2 & _2 .~ "hi":: (Int,String)
-Prelude Control.Lens> x
-(2,"hi")
+class MakesF t1 t2 x s | t1 x s -> t2 where
+  partition :: Iso' s (t1 x,t2 x)
 
-Yes, it risks partial computations, but we also do so in case of pattern matching,
-and also in Haskell we can leave records uninitialized.
--}
+instance MakesF t Nil x (t x) where
+  partition = iso (,Nil) fst
 
-type AutoLens t = forall x. Has t x => Lens' x (t x)
-type Has t x = HasF t x x
-
-class HasF t x s where
-  have :: Lens' s (t x)
-
-instance HasF t x (t x) where
-  have = simple
-
-instance {-# OVERLAPPING #-} HasF t x (MulF t g x) where
-  have = let getter (These t0 _) = t0
-             setter (These _ tt) t0 = These t0 tt
-    in lens getter setter
-
-instance {-# OVERLAPPABLE #-} HasF t x (g x) => HasF t x (MulF f g x) where
-  have = let getter (These _ tt) = tt
-             setter (These t0 _) tt = These t0 tt
-    in lens getter setter . have
-
-instance HasF t (Fix f) (f (Fix f)) => HasF t (Fix f) (Fix f) where
-  have = fix . have
-
+instance {-# OVERLAPPING #-} MakesF t g x (MulF t g x) where
+  partition = _These
+instance {-# OVERLAPPABLE #-} MakesF t1 t2 x (g x) => MakesF t1 (MulF f t2) x (MulF f g x) where
+  partition = let shuffle :: Iso' (a,(b,c)) (b,(a,c))
+                  shuffle = iso (\(a,(b,c)) -> (b,(a,c))) (\(b,(a,c)) -> (a,(b,c)))
+         in _These . bimapping simple partition . shuffle . bimapping simple (from _These)
+instance MakesF t1 t2 (Fix f) (f (Fix f)) => MakesF t1 t2 (Fix f) (Fix f) where
+  partition = fix . partition
 
 -- The Base Functor
 data Nil x = Nil
@@ -122,14 +111,17 @@ pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
 -- The tagging Functor
 data TagF x = TagF String
              deriving (Eq, Ord, Show, Functor)
--- type HasTag x = Has TagF x
--- tag :: AutoLens TagF
--- tag = have
---
--- -- smart patterns
--- pattern Tag t r <- ()
 
+                      {-
+type MakesTag f x = Makes TagF f x
+tag :: AutoPartition TagF f
+tag = partition
 
+-- smart patterns
+pattern r :@ t <- (view tag -> (TagF t, r)) where
+  r :@ t = view (from tag) (TagF t, r)
+
+-}
 
 type ArithExpr = Fix ArithF
 
@@ -144,15 +136,19 @@ atx = In (Here (BranchF [In $ There $ Here $ ImmF 42]))
 
 type Expr = Fix (TagF :* (TreeF :+ ArithF :+ Nil) :* Nil)
 
-expr :: Expr
-expr = In $ These (TagF "0:0") $ These (There $ Here $ ImmF 42) Nil
+expr1 :: Expr
+expr1 = In $ These (TagF "0:0") $ These (There $ Here $ ImmF 42) Nil
+
+-- expr2 :: Expr
+-- expr2 = Imm 42 :@ "0:2"
 
 main :: IO ()
 main = do
   print "hi"
   print ax
   print atx
-  print expr
+  print expr1
+--   print expr2
   print $ (atx ^? arith :: Maybe (ArithF ATExpr))
   print $ (arith # ImmF 4242 :: ATExpr)
   print $ [atx ^? tree, Just (BranchF  [atx])]
@@ -162,6 +158,8 @@ main = do
       testExpr = Add (Branch [Imm 3, Add (Imm 6) (Imm 9)]) (Branch [Imm 10, Imm 100])
   print testExpr
   print $ eval testExpr
+
+
 
 eval :: ATExpr -> TV
 eval (Imm n) = Value n
