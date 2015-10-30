@@ -130,7 +130,7 @@ eval (Add a0 b0) = evalB (+) (eval a0) (eval b0)
 eval (Mul a0 b0) = evalB (*) (eval a0) (eval b0)
 eval (Branch xs) = Branch $ map eval xs
 
-
+-- We should be able to traverse over the Fixed structures.
 eval1 :: (Int -> Int) -> TV -> TV
 eval1 f xs = case xs of
   Value n -> Value (f n)
