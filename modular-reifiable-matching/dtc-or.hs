@@ -1,0 +1,153 @@
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
+
+import Control.Lens
+
+data AddF fh ft x = Here (fh x) | There (ft x)
+                                  deriving (Eq, Ord, Show, Functor)
+
+_Here :: Prism' (AddF fh ft x) (fh x)
+_Here = let f (Here x) = Just x
+            f _        = Nothing
+    in prism' Here f
+
+_There :: Prism' (AddF fh ft x) (ft x)
+_There = let f (There x) = Just x
+             f _        = Nothing
+    in prism' There f
+
+type a :+ b = AddF a b
+
+infixr 6 :+
+
+data Fix f where
+  In :: {out :: f (Fix f)} -> Fix f
+deriving instance (Show (f (Fix f))) => Show (Fix f)
+
+fix :: Iso' (Fix f) (f (Fix f))
+fix = iso out In
+
+-- The (+) part
+type AutoPrism t = forall x. Matches t x => Prism' x (t x)
+type Matches t x = MatchesF t x x
+
+class MatchesF t x s where
+  match :: Prism' s (t x)
+
+instance {-# OVERLAPPING #-} MatchesF t x (AddF t g x) where
+  match = _Here
+
+instance {-# OVERLAPPABLE #-} MatchesF t x (g x) => MatchesF t x (AddF f g x) where
+  match = _There . match
+
+instance MatchesF t (Fix f) (f (Fix f)) => MatchesF t (Fix f) (Fix f) where
+  match = fix . match
+
+-- The Base Functor
+data Nil x = Nil
+             deriving (Eq, Ord, Show, Functor)
+
+-- The Value Functor
+data ValueF x = ValueF Int
+             deriving (Eq, Ord, Show, Functor)
+value :: AutoPrism ValueF
+value = match
+-- smart patterns
+pattern Value n <- ((^? value) -> Just (ValueF n)) where
+  Value n = value # ValueF n
+
+
+-- The Tree Functor
+data TreeF x = BranchF [x]
+             deriving (Eq, Ord, Show, Functor)
+type MatchesTree x = Matches TreeF x
+tree :: AutoPrism TreeF
+tree = match
+
+-- smart patterns
+pattern Branch xs <- ((^? tree) -> Just (BranchF xs)) where
+  Branch xs = tree # BranchF xs
+
+
+-- The Arithmetic Functor
+data ArithF x = ImmF Int | AddF x x | MulF x x
+             deriving (Eq, Ord, Show, Functor)
+type MatchesArith x = Matches ArithF x
+
+arith :: AutoPrism ArithF
+arith = match
+
+-- smart patterns
+pattern Imm n <- ((^? arith) -> Just (ImmF n)) where
+  Imm n = arith # ImmF n
+pattern Add a b <- ((^? arith) -> Just (AddF a b)) where
+  Add a b = arith # AddF a b
+pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
+  Mul a b = arith # MulF a b
+
+-- The tagging Functor
+data TagF x = TagF String x
+             deriving (Eq, Ord, Show, Functor)
+
+type MatchesTag x = Matches TagF x
+tag :: AutoPrism TagF
+tag = match
+
+pattern Tag str x <- ((^? tag) -> Just (TagF str x)) where
+  Tag str x = tag # TagF str x
+
+
+type ArithExpr = Fix ArithF
+
+ax :: ArithExpr
+ax = In (AddF (In (ImmF 40)) (In (ImmF 2)))
+
+type ATExpr = Fix (TreeF :+ ArithF :+ Nil)
+type TV = Fix (TagF :+ TreeF :+ ValueF :+ Nil)
+
+atx :: ATExpr
+atx = In (Here (BranchF [In $ There $ Here $ ImmF 42]))
+
+type Expr = Fix (TagF :+ TreeF :+ ArithF :+ Nil)
+
+expr1 :: Expr
+expr1 = In $ Here $ TagF "expr1:0" $ In $ There $ There $ Here $ ImmF 42
+-- Nil -- $ In $ There (There $ Here $ ImmF 42) Nil
+
+expr2 :: Expr
+expr2 = Mul (Tag "expr2:1" $ Imm 100) (Branch [Imm 42, Tag "expr2:3" $ Imm 25 ])
+
+main :: IO ()
+main = do
+  print "hi"
+  print ax
+  print atx
+  print expr1
+  print $ eval expr2
+
+
+eval :: Expr -> TV
+eval (Imm n) = Value n
+eval (Add a0 b0) = evalB (+) (eval a0) (eval b0)
+eval (Mul a0 b0) = evalB (*) (eval a0) (eval b0)
+eval (Branch xs) = Branch $ map eval xs
+eval (Tag s x)   = Tag s $ eval x
+
+-- We should be able to traverse over the Fixed structures.
+eval1 :: (Int -> Int) -> TV -> TV
+eval1 f xs = case xs of
+  Value n -> Value (f n)
+  Branch ys -> Branch $ map (eval1 f) ys
+  Tag s x -> Tag s $ eval1 f x
+
+evalB :: (Int -> Int -> Int) -> TV -> TV -> TV
+evalB op a1 b1 =
+  case (a1,b1) of
+   (Tag sa va, Tag sb vb) -> Tag (sa++sb) $ evalB op va vb
+   (Tag sa va, vb) -> Tag sa $ evalB op va vb
+   (va, Tag sb vb) -> Tag sb $ evalB op va vb
+   (Branch xs, Branch ys) | length xs == length ys ->
+                                 Branch (zipWith (evalB op) xs ys)
+   (Branch _, Branch _) -> error "branch length mismatch"
+   (Value x, ys) -> eval1 (op x) ys
+   (xs, Value y) -> eval1 (flip op y) xs
+   (Value x, Value y) -> Value (op x y)
