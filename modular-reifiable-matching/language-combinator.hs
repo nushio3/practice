@@ -1,14 +1,24 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, DeriveFunctor, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
 
+{-
+
+Built based on modular reifiable matching by Bruno C. d. S. Oliveira, Shin-Cheng Mu, and Shu-Hung You.
+http://www.iis.sinica.edu.tw/~scm/2015/mrm/
+
+Tested on stack lts-3.11
+
+-}
+
 import Control.Lens
 
+-- The sum of functors
 data Sum (fs :: [* -> *]) x where
   Void :: Sum '[] x
   Here :: Functor f => f x -> Sum (f ': fs) x
   There :: Sum fs x -> Sum (f ': fs) x
 
 instance Show x => Show (Sum '[] x) where
-  show Void = "Void"
+  show Void = "∅"
 
 instance (Show (f x), Show (Sum fs x)) => Show (Sum (f ': fs) x) where
   showsPrec n (Here x) = showsPrec n x
@@ -19,7 +29,7 @@ instance Functor (Sum fs) where
   fmap f (Here t)  = Here $ fmap f t
   fmap f (There t) = There $ fmap f t
 
-
+-- The prisms for accessing here and there
 _Here :: Functor f => Prism' (Sum (f ': fs) x) (f x)
 _Here = let a :: Sum (f ': fs) x -> Maybe (f x)
             a (Here x) = Just x
@@ -32,7 +42,7 @@ _There = let a :: Sum (f ': fs) x -> Maybe (Sum fs x)
              a _         = Nothing
     in prism' There a
 
-
+-- The constraint that functor f is an element of a functor set fs
 class Elem f fs where
   match :: Prism' (Sum fs x) (f x)
 
@@ -41,6 +51,7 @@ instance {-# OVERLAPPING #-} Functor f => Elem f (f ': fs) where
 instance {-# OVERLAPPABLE #-} (Functor f, Functor g, Elem f fs) => Elem f (g ': fs) where
   match = _There . match
 
+-- The constraint that set of functors fs is a subset of gs
 class Subset fs gs where
   subrep :: Prism' (Sum gs x) (Sum fs x)
 
@@ -61,11 +72,13 @@ instance {-# OVERLAPPABLE #-} (Functor f, Elem f gs, Subset fs gs) => Subset (f 
                bwd _                     = Nothing
            in prism' fwd bwd
 
-type Matches fs a b = Sum fs a -> b
+-- emulate some mrm
+type MRM_Matches fs a b = Sum fs a -> b
 
-extractAt :: Elem f fs => (Matches fs a b) -> (f a -> b)
+extractAt :: Elem f fs => (MRM_Matches fs a b) -> (f a -> b)
 extractAt sfun fa = sfun $ (review match) fa
 
+-- The fix point
 data Fix f where
   In :: Functor f => {out :: f (Fix f)} -> Fix f
 instance (Show (f (Fix f))) => Show (Fix f) where
@@ -74,6 +87,7 @@ instance (Show (f (Fix f))) => Show (Fix f) where
 fix :: Functor f => Iso' (Fix f) (f (Fix f))
 fix = iso out In
 
+-- We create languages by folding over set of functors
 type Lang (fs :: [ * -> * ]) = Fix (Sum fs)
 type LangPrism (f :: * -> *) = forall f fs . Elem f fs => Prism' (Lang fs) (f (Lang fs))
 
@@ -83,9 +97,12 @@ fold k (In x) = k $ fmap (fold k) x
 subFix :: (Subset fs gs) => Lang fs -> Lang gs
 subFix = fold (In . review subrep)
 
--- == Example language == --
+subOp :: (Subset fs gs) => (Lang gs -> c) -> Lang fs -> c
+subOp g = g . subFix
 
--- The Value Functor
+-- ==== Example language ==== --
+
+-- == The Value Functor ==
 data ValueF x = ValueF Int
              deriving (Eq, Ord, Show, Functor)
 value :: LangPrism ValueF
@@ -94,7 +111,7 @@ value = fix . match
 pattern Value n <- ((^? value) -> Just (ValueF n)) where
   Value n = value # ValueF n
 
--- The Tuple Functor
+-- == The Tuple Functor ==
 data TupleF x = TupleF [x]
              deriving (Eq, Ord, Show, Functor)
 tree :: LangPrism TupleF
@@ -104,7 +121,7 @@ tree = fix . match
 pattern Tuple xs <- ((^? tree) -> Just (TupleF xs)) where
   Tuple xs = tree # TupleF xs
 
--- The Arithmetic Functor
+-- == The Arithmetic Functor ==
 data ArithF x = ImmF Int | AddF x x | MulF x x
              deriving (Eq, Ord, Show, Functor)
 arith :: LangPrism ArithF
@@ -117,10 +134,34 @@ pattern Add a b <- ((^? arith) -> Just (AddF a b)) where
 pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
   Mul a b = arith # MulF a b
 
+-- == type synonyms and evaluation ==
+type Expr = Lang [ArithF, TupleF]
+type TV   = Lang [ValueF, TupleF]
+
+eval :: Expr -> TV
+eval (Imm n)    = Value n
+eval (Add a b)  = evalBin (+) (eval a) (eval b)
+eval (Mul a b)  = evalBin (*) (eval a) (eval b)
+eval (Tuple xs) = Tuple $ map eval xs
+
+evalBin :: (Int -> Int -> Int) -> TV -> TV -> TV
+evalBin  op a1 b1 =
+  case (a1,b1) of
+   (Tuple xs, Tuple ys) | length xs == length ys ->
+                                 Tuple (zipWith (evalBin op) xs ys)
+   (Tuple _, Tuple _) -> error "tuple length mismatch"
+   (Value x, ys) -> eval1 (op x) ys
+   (xs, Value y) -> eval1 (flip op y) xs
+   (Value x, Value y) -> Value (op x y)
+
+-- We should be able to traverse over the Fixed structures.
+eval1 :: (Int -> Int) -> TV -> TV
+eval1 f xs = case xs of
+  Value n -> Value (f n)
+  Tuple ys -> Tuple $ map (eval1 f) ys
 
 
 
-type Expr = Lang [TupleF, ArithF]
 
 expr1 :: Expr
 expr1 = Tuple [Imm 23 `Add` Imm 21, Imm 4, subFix expr2]
@@ -131,3 +172,11 @@ expr2 = Mul (Imm 3) (Imm 41)
 main :: IO ()
 main = do
   print expr1
+  print $ eval $ Mul (Imm 100) expr1
+  print $ subOp eval $ expr2
+
+{-
+TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
+TupleF [ValueF 4400,ValueF 400,ValueF 12300]
+ValueF 123
+-}
