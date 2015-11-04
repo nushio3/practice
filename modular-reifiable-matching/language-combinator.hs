@@ -5,6 +5,8 @@
 Built based on modular reifiable matching by Bruno C. d. S. Oliveira, Shin-Cheng Mu, and Shu-Hung You.
 http://www.iis.sinica.edu.tw/~scm/2015/mrm/
 
+see also: composable algebra by Bruno & Boya http://emmabypeng.github.io/files/FYP_part2.pdf
+
 Tested on stack lts-3.11
 
 -}
