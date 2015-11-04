@@ -92,6 +92,11 @@ type MatchesArith x = Matches ArithF x
 arith :: AutoPrism ArithF
 arith = match
 
+arith' :: MatchesF ArithF x s => Prism' s (ArithF x)
+arith' = match
+pattern Imm' n <- ((^? arith') -> Just (ImmF n)) where
+  Imm' n = arith' # ImmF n
+
 -- smart patterns
 pattern Imm n <- ((^? arith) -> Just (ImmF n)) where
   Imm n = arith # ImmF n
