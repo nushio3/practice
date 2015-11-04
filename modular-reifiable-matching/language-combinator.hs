@@ -44,12 +44,22 @@ instance {-# OVERLAPPABLE #-} (Functor f, Functor g, Elem f fs) => Elem f (g ': 
 class Subset fs gs where
   subrep :: Prism' (Sum gs x) (Sum fs x)
 
-instance {-# OVERLAPPING #-} Subset '[] fs where
-  subrep = prism' _H _I
+instance {-# OVERLAPPING #-} Subset '[] '[] where
+  subrep = simple
 
-instance {-# OVERLAPPABLE #-} (Subset fs gs, Elem f gs) => Subset (f ': fs) gs where
-  subrep = undefined
+instance {-# OVERLAPPING #-} Subset '[] fs => Subset '[] (f ': fs) where
+  subrep = prism' There (const Nothing) . subrep
 
+instance {-# OVERLAPPABLE #-} (Functor f, Elem f gs, Subset fs gs) => Subset (f ': fs) gs where
+  subrep = let fwd :: Sum (f ': fs) x -> Sum gs x
+               fwd (Here x)  = review match x
+               fwd (There x) = review subrep x
+
+               bwd :: Sum gs x -> Maybe (Sum (f ': fs) x)
+               bwd ((^? match ) -> Just x) = Just (Here x)
+               bwd ((^? subrep) -> Just x) = Just (There x)
+               bwd _                     = Nothing
+           in prism' fwd bwd
 
 type Matches fs a b = Sum fs a -> b
 
