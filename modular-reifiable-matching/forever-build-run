@@ -1,0 +1,8 @@
+#!/bin/sh
+
+while :
+do
+    inotifywait -e modify $1.hs
+    stack build
+    stack exec $1
+done

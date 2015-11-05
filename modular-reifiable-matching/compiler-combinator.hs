@@ -9,6 +9,7 @@ Tested on stack lts-3.11
 
 -}
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad.Trans.Either
 import Control.Monad.Reader hiding (fix)
@@ -17,7 +18,7 @@ import Data.Traversable
 -- The sum of functors
 data Sum (fs :: [* -> *]) x where
   Void :: Sum '[] x
-  Here :: Functor f => f x -> Sum (f ': fs) x
+  Here :: Traversable f => f x -> Sum (f ': fs) x
   There :: Sum fs x -> Sum (f ': fs) x
 
 instance Show x => Show (Sum '[] x) where
@@ -32,14 +33,22 @@ instance Functor (Sum fs) where
   fmap f (Here t)  = Here $ fmap f t
   fmap f (There t) = There $ fmap f t
 
+instance Foldable (Sum fs) where
+  foldMap = foldMapDefault
+
+instance Traversable (Sum fs) where
+  traverse afb Void      = pure Void
+  traverse afb (Here x)  = Here  <$> traverse afb x
+  traverse afb (There x) = There <$> traverse afb x
+
 -- The prisms for accessing here and there
-_Here :: Functor f => Prism' (Sum (f ': fs) x) (f x)
+_Here :: Traversable f => Prism' (Sum (f ': fs) x) (f x)
 _Here = let a :: Sum (f ': fs) x -> Maybe (f x)
             a (Here x) = Just x
             a _        = Nothing
     in prism' Here a
 
-_There :: Functor f => Prism' (Sum (f ': fs) x) (Sum fs x)
+_There :: Traversable f => Prism' (Sum (f ': fs) x) (Sum fs x)
 _There = let a :: Sum (f ': fs) x -> Maybe (Sum fs x)
              a (There x) = Just x
              a _         = Nothing
@@ -49,9 +58,9 @@ _There = let a :: Sum (f ': fs) x -> Maybe (Sum fs x)
 class Elem f fs where
   match :: Prism' (Sum fs x) (f x)
 
-instance {-# OVERLAPPING #-} Functor f => Elem f (f ': fs) where
+instance {-# OVERLAPPING #-} Traversable f => Elem f (f ': fs) where
   match = _Here
-instance {-# OVERLAPPABLE #-} (Functor f, Functor g, Elem f fs) => Elem f (g ': fs) where
+instance {-# OVERLAPPABLE #-} (Traversable f, Traversable g, Elem f fs) => Elem f (g ': fs) where
   match = _There . match
 
 -- The constraint that set of functors fs is a subset of gs
@@ -64,7 +73,7 @@ instance {-# OVERLAPPING #-} Subset '[] '[] where
 instance {-# OVERLAPPING #-} Subset '[] fs => Subset '[] (f ': fs) where
   subrep = prism' There (const Nothing) . subrep
 
-instance {-# OVERLAPPABLE #-} (Functor f, Elem f gs, Subset fs gs) => Subset (f ': fs) gs where
+instance {-# OVERLAPPABLE #-} (Traversable f, Elem f gs, Subset fs gs) => Subset (f ': fs) gs where
   subrep = let fwd :: Sum (f ': fs) x -> Sum gs x
                fwd (Here x)  = review match x
                fwd (There x) = review subrep x
@@ -72,27 +81,28 @@ instance {-# OVERLAPPABLE #-} (Functor f, Elem f gs, Subset fs gs) => Subset (f 
                bwd :: Sum gs x -> Maybe (Sum (f ': fs) x)
                bwd ((^? match ) -> Just x) = Just (Here x)
                bwd ((^? subrep) -> Just x) = Just (There x)
-               bwd _                     = Nothing
+               bwd _                       = Nothing
            in prism' fwd bwd
 
 -- emulate some mrm
-type MRM_Matches fs a b = Sum fs a -> b
+type Matches fs a b = Sum fs a -> b
 
-extractAt :: Elem f fs => (MRM_Matches fs a b) -> (f a -> b)
+extractAt :: Elem f fs => Matches fs a b -> (f a -> b)
 extractAt sfun fa = sfun $ (review match) fa
 
 -- The fix point
 data Fix f where
-  In :: Functor f => {out :: f (Fix f)} -> Fix f
+  In :: Traversable f => {out :: f (Fix f)} -> Fix f
 instance (Show (f (Fix f))) => Show (Fix f) where
   showsPrec n (In x) = showsPrec n x
 
-fix :: Functor f => Iso' (Fix f) (f (Fix f))
+fix :: Traversable f => Iso' (Fix f) (f (Fix f))
 fix = iso out In
 
 -- We create languages by folding over set of functors
 type Lang (fs :: [ * -> * ]) = Fix (Sum fs)
 type LangPrism (f :: * -> *) = forall f fs . Elem f fs => Prism' (Lang fs) (f (Lang fs))
+type Algebras fs a = Sum fs a -> a
 
 fold :: (Sum fs a -> a) -> Lang fs -> a
 fold k (In x) = k $ fmap (fold k) x
@@ -103,10 +113,18 @@ subFix = fold (In . review subrep)
 subOp :: (Subset fs gs) => (Lang gs -> c) -> Lang fs -> c
 subOp g = g . subFix
 
+mlift :: Monad m => Matches fs a b -> Matches fs (m a) (m b)
+mlift fsa2b fsma = liftM fsa2b $ sequence fsma
+
 -- ==== Compiler Monad ==== --
 
-newtype CM a = CM { runM :: ReaderT CompilerStatus (EitherT String IO) a}
+type CM = EitherT String (ReaderT CompilerStatus IO)
 data CompilerStatus = CompilerStatus { cursor :: String }
+
+throw :: String -> CM ()
+throw msg = do
+  s <- ask
+  left $ "Compiler error at " ++ cursor s
 
 -- ==== Example language ==== --
 
