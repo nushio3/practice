@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFunctor, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFunctor, DeriveFoldable, DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
 
 {-
 
@@ -12,6 +12,7 @@ Tested on stack lts-3.11
 import Control.Lens
 import Control.Monad.Trans.Either
 import Control.Monad.Reader hiding (fix)
+import Data.Traversable
 
 -- The sum of functors
 data Sum (fs :: [* -> *]) x where
@@ -102,11 +103,16 @@ subFix = fold (In . review subrep)
 subOp :: (Subset fs gs) => (Lang gs -> c) -> Lang fs -> c
 subOp g = g . subFix
 
+-- ==== Compiler Monad ==== --
+
+newtype CM a = CM { runM :: ReaderT CompilerStatus (EitherT String IO) a}
+data CompilerStatus = CompilerStatus { cursor :: String }
+
 -- ==== Example language ==== --
 
 -- == The Value Functor ==
 data ValueF x = ValueF Int
-             deriving (Eq, Ord, Show, Functor)
+             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 value :: LangPrism ValueF
 value = fix . match
 -- smart patterns
@@ -115,7 +121,7 @@ pattern Value n <- ((^? value) -> Just (ValueF n)) where
 
 -- == The Tuple Functor ==
 data TupleF x = TupleF [x]
-             deriving (Eq, Ord, Show, Functor)
+             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 tree :: LangPrism TupleF
 tree = fix . match
 
@@ -125,7 +131,7 @@ pattern Tuple xs <- ((^? tree) -> Just (TupleF xs)) where
 
 -- == The Arithmetic Functor ==
 data ArithF x = ImmF Int | AddF x x | MulF x x
-             deriving (Eq, Ord, Show, Functor)
+             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 arith :: LangPrism ArithF
 arith = fix . match
 -- smart patterns
@@ -138,7 +144,7 @@ pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
 
 -- == Tag
 data TagF x = TagF String x
-          deriving (Eq, Ord, Show, Functor)
+          deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 tag :: LangPrism TagF
 tag = fix . match
 -- smart patterns
