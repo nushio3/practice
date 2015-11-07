@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFunctor, DeriveFoldable, DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFunctor, DeriveFoldable, DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TemplateHaskell, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
 
 {-
 
@@ -12,7 +12,7 @@ Tested on stack lts-3.11
 import Control.Applicative
 import Control.Lens
 import Control.Monad.Trans.Either
-import Control.Monad.Reader hiding (fix)
+import Control.Monad.State hiding (fix)
 import Data.Traversable
 
 -- The sum of functors
@@ -116,15 +116,33 @@ subOp g = g . subFix
 mlift :: Monad m => Matches fs a b -> Matches fs (m a) (m b)
 mlift fsa2b fsma = liftM fsa2b $ sequence fsma
 
+foldM :: Monad m => (Sum fs a -> m a) -> Lang fs -> m a
+foldM k x = fold (join . mlift k) x
+
+
+
 -- ==== Compiler Monad ==== --
 
-type CM = EitherT String (ReaderT CompilerStatus IO)
-data CompilerStatus = CompilerStatus { cursor :: String }
+type CM = EitherT String (StateT CompilerState IO)
+data CompilerState = CompilerStatus { _cursor :: String }
+makeLenses ''CompilerState
 
-throw :: String -> CM ()
+throw :: String -> CM a
 throw msg = do
-  s <- ask
-  left $ "Compiler error at " ++ cursor s
+  s <- use cursor
+  left $ "Compiler error at " ++ s ++ "\n" ++ msg
+
+runCompiler :: CM a -> IO (Either String a)
+runCompiler cm = do
+  ret <- flip evalStateT (CompilerStatus "somewhere in the program") $ runEitherT cm
+  return ret
+
+testCompiler :: Show a => CM a -> IO ()
+testCompiler cm = do
+  ret <- runCompiler cm
+  case ret of
+   Left err -> putStrLn err
+   Right a -> print a
 
 -- ==== Example language ==== --
 
@@ -169,17 +187,30 @@ tag = fix . match
 pattern Tag s x <- ((^? tag) -> Just (TagF s x)) where
   Tag s x = tag # TagF s x
 
+withTag :: Subset fs fs => Matches fs a (CM a) -> Matches (TagF ': fs) a (CM a)
+withTag m (Here (TagF s x)) = do
+  cursor .= s
+  return x
+withTag m (There x) = m $ review subrep x
+
+
+
+
 -- == type synonyms and evaluation ==
+type TaggedExpr = Lang [TagF, ArithF, TupleF]
 type Expr = Lang [ArithF, TupleF]
 type TV   = Lang [ValueF, TupleF]
 
-eval :: Expr -> TV
-eval (Imm n)    = Value n
-eval (Add a b)  = evalBin (+) (eval a) (eval b)
-eval (Mul a b)  = evalBin (*) (eval a) (eval b)
-eval (Tuple xs) = Tuple $ map eval xs
 
-evalBin :: (Int -> Int -> Int) -> TV -> TV -> TV
+evArith :: Matches '[ArithF] TV (CM TV)
+evArith (Imm n)    = return $ Value n
+evArith (Add a b)  = evalBin (+) a b
+evArith (Mul a b)  = evalBin (*) a b
+
+evTuple :: Matches '[TupleF] TV (CM TV)
+evTuple (TupleF xs) = Tuple xs
+
+evalBin :: (Int -> Int -> Int) -> TV -> TV -> CM TV
 evalBin  op a1 b1 =
   case (a1,b1) of
    (Tuple xs, Tuple ys) | length xs == length ys ->
@@ -187,35 +218,35 @@ evalBin  op a1 b1 =
 
   {- You should be able to retrieve the tag of (Tuple _)
      clause, which you already have consumed!! -}
-   (Tuple _, Tuple _) -> error "tuple length mismatch"
+   (Tuple _, Tuple _) -> throw "tuple length mismatch"
    (Value x, ys) -> eval1 (op x) ys
    (xs, Value y) -> eval1 (flip op y) xs
-   (Value x, Value y) -> Value (op x y)
+   (Value x, Value y) -> return $  Value (op x y)
 
 -- We should be able to traverse over the Fixed structures.
-eval1 :: (Int -> Int) -> TV -> TV
+eval1 :: (Int -> Int) -> TV -> CM TV
 eval1 f xs = case xs of
-  Value n -> Value (f n)
-  Tuple ys -> Tuple $ map (eval1 f) ys
+  Value n ->  return $ Value (f n)
+  Tuple ys -> Tuple <$> mapM (eval1 f) ys
 
+eval :: Expr -> CM TV
+eval = undefined
 
-
-
-expr1 :: Expr
-expr1 = Tuple [Imm 23 `Add` Imm 21, Imm 4, subFix expr2]
+expr1 :: TaggedExpr
+expr1 = Tag "1:0" $ Tuple [Imm 23 `Add` Imm 21, Imm 4, subFix expr2]
 
 expr2 :: Lang '[ ArithF ]
 expr2 = Mul (Imm 3) (Imm 41)
 
-expr3 :: Expr
-expr3 = Tuple [Imm 100, Imm 1000]
+expr3 :: TaggedExpr
+expr3 = Tag "3:0" $ Tuple [Imm 100, Imm 1000]
 
 main :: IO ()
 main = do
   print expr1
-  print $ eval $ Mul (Imm 100) expr1
-  print $ subOp eval $ expr2
-  print $ eval $ Mul expr1 expr3
+  testCompiler $ eval $ Mul (Imm 100) expr1
+  testCompiler $ subOp eval $ expr2
+  testCompiler $ eval $ Mul expr1 expr3
 
 {-
 TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
