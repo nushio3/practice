@@ -184,6 +184,9 @@ evalBin  op a1 b1 =
   case (a1,b1) of
    (Tuple xs, Tuple ys) | length xs == length ys ->
                                  Tuple (zipWith (evalBin op) xs ys)
+
+  {- You should be able to retrieve the tag of (Tuple _)
+     clause, which you already have consumed!! -}
    (Tuple _, Tuple _) -> error "tuple length mismatch"
    (Value x, ys) -> eval1 (op x) ys
    (xs, Value y) -> eval1 (flip op y) xs
