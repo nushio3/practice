@@ -95,6 +95,11 @@ type LangPrism (f :: * -> *) = forall f fs . Elem f fs => Prism' (Lang fs) (f (L
 fold :: (Sum fs a -> a) -> Lang fs -> a
 fold k (In x) = k $ fmap (fold k) x
 
+zfold :: Functor f => ([Fix f] -> f a -> a) -> Fix f -> a
+zfold k x = go k [x] x
+  where
+    go k fixes x = k fixes $ fmap (go k (x:fixes)) (out x)
+
 subFix :: (Subset fs gs) => Lang fs -> Lang gs
 subFix = fold (In . review subrep)
 
