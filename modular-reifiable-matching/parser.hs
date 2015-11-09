@@ -170,7 +170,11 @@ subOp g = g . subFix
 transAlg :: Subset fs gs => Algebra (Sum fs) (Lang gs)
 transAlg = review (fix . subrep)
 
-(+::) :: Algebra f a -> Algebra (Sum fs) a -> Algebra (Sum (f ': fs)) a
+mTransAlg :: (Monad m, Subset fs gs) => AlgebraM m (Sum fs) (Lang gs)
+mTransAlg = return . transAlg
+
+
+(+::) :: Algebrogen f a b -> Algebrogen (Sum fs) a b -> Algebrogen (Sum (f ': fs)) a b
 af +:: afs = affs
   where
     affs (Here x)  = af  x
@@ -246,24 +250,40 @@ propagateTag (TaggedF s x) = Tag s (infect x)
 
 
 
+-- == compiler monad == --
+
+type M = Either String
+
 -- == type synonyms and evaluation ==
 
-evArith :: (Elem ValueF gs, Elem TupleF gs) => Algebra ArithF (Lang gs)
-evArith (Imm n)    = Value n
+evArith :: AlgebraM M ArithF NF
+evArith (Imm n)    = return $ Value n
 evArith (Add a b)  = evBinOp (+) a b
 evArith (Mul a b)  = evBinOp (*) a b
 
-evBinOp :: (Elem ValueF gs, Elem TupleF gs) => (Int -> Int -> Int) -> Lang gs -> Lang gs -> Lang gs
-evBinOp op a b = error $ "cannot operate: "
+evBinOp :: (Int -> Int -> Int) -> NF -> NF -> M NF
+evBinOp op a b = case (a,b) of
+   (Tuple xs, Tuple ys) | length xs == length ys ->
+                                Tuple <$> zipWithM (evBinOp op) xs ys
+   (Tuple _, Tuple _) -> Left "tuple length mismatch"
+   (Value x, ys) -> eval1 (op x) ys
+   (xs, Value y) -> eval1 (flip op y) xs
+   (Value x, Value y) -> return $  Value (op x y)
+
+eval1 :: (Int -> Int) -> NF -> M NF
+eval1 f xs = case xs of
+  Value n ->  return $ Value (f n)
+  Tuple ys -> Tuple <$> mapM (eval1 f) ys
+
 
 type Expr = Lang [ArithF,TupleF]
-type NF = Lang [ ValueF, TupleF]
+type NF   = Lang [ValueF,TupleF]
 
 expr1 :: Expr
 expr1 = Tuple [Imm 23 `Add` Imm 21, Imm 4]
 
-eval :: Expr -> NF
-eval = fold $ evArith +:: transAlg
+eval :: Expr -> M NF
+eval = mfold $ evArith +:: mTransAlg
 
 -- == Parser ==
 
@@ -295,10 +315,7 @@ parseTerm = parseTuple <|> parseImm
 
 main :: IO ()
 main = do
-  Just exprs <- P.parseFromFile (parseExpr `P.sepBy` P.newline) "input.txt"
-  mapM_ print exprs
-{-
-TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
-TupleF [ValueF 4400,ValueF 400,ValueF 12300]
-ValueF 123
--}
+  Just exprs <- P.parseFromFile (many parseExpr) "input.txt"
+  forM_  exprs $ \expr -> do
+    print expr
+    print $ eval expr
