@@ -136,19 +136,26 @@ type MatchPrism (f :: * -> *) = forall f x . Matches f x => Prism' x (f (Content
 
 type Algebrogen f a b = f a -> b
 type Algebra f a = f a -> a
+type AlgebraM m f a = f a -> m a
 
-fold :: Algebra f a -> Fix f -> a
-fold k (In _ x) = k $ fmap (fold k) x
+foldout :: Algebra f a -> Fix f -> a
+foldout k (In _ x) = k $ fmap (foldout k) x
 
-langfold :: Algebra f (Lang g) -> Fix f -> (Lang g)
-langfold k (In meta x) = (k $ fmap (langfold k) x) & metadata .~ meta
+fold :: Algebra f (Lang g) -> Fix f -> (Lang g)
+fold k (In meta x) = (k $ fmap (fold k) x) & metadata .~ meta
 
 
 mlift :: (Monad m, Traversable fs) => Algebrogen fs a b -> Algebrogen fs (m a) (m b)
 mlift fsa2b fsma = liftM fsa2b $ sequence fsma
 
-foldM :: Monad m => (Sum fs a -> m a) -> Lang fs -> m a
-foldM k x = fold (join . mlift k) x
+mfold :: (Monad m, Traversable f) => AlgebraM m f (Lang g) -> Fix f -> m (Lang g)
+mfold k (In meta x) = do
+  r1 <- traverse (mfold k) x
+  r2 <- k r1
+  return $ r2 & metadata .~ meta
+
+mfoldout :: Monad m => (Sum fs a -> m a) -> Lang fs -> m a
+mfoldout k x = foldout (join . mlift k) x
 
 subFix :: (Subset fs gs) => Lang fs -> Lang gs
 subFix = fold (review (fix . subrep))
@@ -249,7 +256,7 @@ expr1 :: TaggedExpr
 expr1 = propagateTag $ Tag "1:0" $ Tuple [Imm 23 `Add` Imm 21, Imm 4]
 
 eval :: TaggedExpr -> TaggedValue
-eval = langfold $ evArith +:: transAlg
+eval = fold $ evArith +:: transAlg
 
 main :: IO ()
 main = do
