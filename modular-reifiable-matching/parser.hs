@@ -22,6 +22,7 @@ import Data.Monoid hiding (Sum)
 import qualified Data.Set as S
 import Data.Traversable
 import qualified Text.Trifecta as P hiding (string)
+import qualified Text.Trifecta.Delta as P
 import qualified Text.Parser.Expression as P
 import qualified Text.PrettyPrint.ANSI.Leijen as Ppr hiding (line, (<>), (<$>), empty, integer)
 import System.IO
@@ -236,7 +237,7 @@ pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
 
 
 -- == The Compiler Metadata Functor ==
-data Metadata = Metadata {_metadataRendering :: P.Rendering}
+data Metadata = Metadata {_metadataRendering :: P.Rendering, _metadataBegin :: P.Delta,  _metadataEnd :: P.Delta}
 instance Show Metadata where
   show = const ""
 
@@ -256,10 +257,10 @@ evBinOp op a b = case (a,b) of
    (Tuple xs, Tuple ys) | length xs == length ys ->
                                 Tuple <$> zipWithM (evBinOp op) xs ys
    (Tuple _, Tuple _) -> Left $
-                         let Just (Metadata ma) = a ^. metadata
-                             Just (Metadata mb) = b ^. metadata
+                         let Just (Metadata ma a1 a2) = a ^. metadata
+                             Just (Metadata mb b1 b2) = b ^. metadata
                          in
-                           P.explain (P.addCaret (mb ^. P.renderingDelta) $ P.addCaret (ma ^. P.renderingDelta) ma) $
+                           P.explain (P.addSpan a1 a2 $ P.addSpan b1 b2 ma) $
                            P.Err (Just $ Ppr.text "tuple length mismatch") [] (S.empty)
 
    (Value x, ys) -> eval1 (op x) ys
@@ -288,11 +289,12 @@ withMeta :: P.Parser (Lang f) -> P.Parser (Lang f)
 withMeta p = do
   r <- P.rend
   x <- p
-  return $ x & metadata .~ (Just $ Metadata r)
+  r2 <- P.rend
+  return $ x & metadata .~ (Just $ Metadata r (r ^. P.renderingDelta) (r2 ^. P.renderingDelta))
 
 
 parseImm :: (Elem ArithF gs) => P.Parser (Lang gs)
-parseImm = do
+parseImm = withMeta $ do
   i <- P.integer
   return $ Imm $ fromInteger i
 
@@ -302,7 +304,13 @@ parseExpr = P.buildExpressionParser tbl parseTerm
     tbl = [[binary "*" Mul P.AssocLeft],
            [binary "+" Add P.AssocLeft]
            ]
-    binary name fun assoc = P.Infix (fun <$ P.symbol name) assoc
+    binary name fun assoc = P.Infix metafy assoc
+      where
+        metafy = do
+          r <- P.rend
+          f <- (fun <$ P.symbol name)
+          r2 <- P.rend
+          return $ \a b -> f a b & metadata .~ (Just $ Metadata r (r ^. P.renderingDelta) (r2 ^. P.renderingDelta))
 
 parseTuple :: P.Parser Expr
 parseTuple = withMeta $ do
