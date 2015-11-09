@@ -1,4 +1,9 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses, PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeFamilies, TypeOperators, UndecidableInstances, ViewPatterns #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveFoldable, DeriveFunctor,
+DeriveTraversable, FlexibleContexts, FlexibleInstances,
+FunctionalDependencies, GADTs, KindSignatures, MultiParamTypeClasses,
+PatternSynonyms, RankNTypes, ScopedTypeVariables, StandaloneDeriving,
+TemplateHaskell, TupleSections, TypeFamilies, TypeOperators,
+UndecidableInstances, ViewPatterns #-}
 
 {-
 
@@ -11,7 +16,26 @@ Tested on stack lts-3.11
 -}
 
 import Control.Lens
+import Control.Monad
 import Data.Traversable
+
+-- The fix point of F-algebra, with parent search
+data Fix f where
+  In :: Functor f => {_parent :: Maybe (Fix f), _out :: f (Fix f)} -> Fix f
+
+instance (Show (f (Fix f))) => Show (Fix f) where
+  showsPrec n (In _ x) = showsPrec n x
+
+parent :: Functor f => Lens' (Fix f) (Maybe (Fix f))
+parent fun (In p o) = fmap (\p' -> In p' o) (fun p)
+
+fix :: forall f. Functor f => Iso' (Fix f) (f (Fix f))
+fix = iso _out go
+  where
+    go :: f (Fix f) -> Fix f
+    go ffixf = let ret = In Nothing (fmap (parent .~ (Just ret)) ffixf)
+               in ret
+
 
 -- The sum of functors
 data Sum (fs :: [* -> *]) x where
@@ -88,6 +112,10 @@ class Matches f x where
   type Content f x :: *
   match :: Prism' x (f (Content f x))
 
+instance Matches f (f x) where
+  type Content f (f x) = x
+  match = simple
+
 instance Elem f fs => Matches f (Sum fs x) where
   type Content f (Sum fs x) = x
   match = constructor
@@ -96,42 +124,57 @@ instance Elem f fs => Matches f (Fix (Sum fs)) where
   type Content f (Fix (Sum fs)) = Fix (Sum fs)
   match = fix . constructor
 
-instance Matches f (g x) => Matches f (TaggedN g x) where
-  type Content f (TaggedN g x) = Content f (g x)
-  match = taggedN . match
-
-
 -- emulate some mrm
 type MRM_Matches fs a b = Sum fs a -> b
 
 extractAt :: Elem f fs => (MRM_Matches fs a b) -> (f a -> b)
 extractAt sfun fa = sfun $ (review constructor) fa
 
--- The fix point
-data Fix f where
-  In :: Functor f => {out :: f (Fix f)} -> Fix f
-instance (Show (f (Fix f))) => Show (Fix f) where
-  showsPrec n (In x) = showsPrec n x
-
-fix :: Functor f => Iso' (Fix f) (f (Fix f))
-fix = iso out In
-
 -- We create languages by folding over set of functors
-type Lang (fs :: [ * -> * ]) = Fix (TaggedN (Sum fs))
+type Lang (fs :: [ * -> * ]) = Fix (Sum fs)
 type MatchPrism (f :: * -> *) = forall f x . Matches f x => Prism' x (f (Content f x))
 
+type Algebrogen f a b = f a -> b
 type Algebra f a = f a -> a
 
 fold :: Algebra f a -> Fix f -> a
-fold k (In x) = k $ fmap (fold k) x
+fold k (In _ x) = k $ fmap (fold k) x
 
--- subFix :: (Subset fs gs) => Lang fs -> Lang gs
--- subFix = fold (In . review subrep)
---
--- subOp :: (Subset fs gs) => (Lang gs -> c) -> Lang fs -> c
--- subOp g = g . subFix
+mlift :: (Monad m, Traversable fs) => Algebrogen fs a b -> Algebrogen fs (m a) (m b)
+mlift fsa2b fsma = liftM fsa2b $ sequence fsma
 
+foldM :: Monad m => (Sum fs a -> m a) -> Lang fs -> m a
+foldM k x = fold (join . mlift k) x
+
+subFix :: (Subset fs gs) => Lang fs -> Lang gs
+subFix = fold (review (fix . subrep))
+
+subOp :: (Subset fs gs) => (Lang gs -> c) -> Lang fs -> c
+subOp g = g . subFix
+
+transAlg :: Subset fs gs => Algebra (Sum fs) (Lang gs)
+transAlg = review (fix . subrep)
+
+(+::) :: Algebra f a -> Algebra (Sum fs) a -> Algebra (Sum (f ': fs)) a
+af +:: afs = affs
+  where
+    affs (Here x)  = af  x
+    affs (There x) = afs x
+
+(>::) :: Elem f fs => Algebra f a -> Algebra (Sum fs) a -> Algebra (Sum fs) a
+af >:: afs= affs
+  where
+    affs ((^? constructor) -> Just fa) = af  fa
+    affs x                             = afs x
+
+
+
+
+-- ========================== --
 -- ==== Example language ==== --
+-- ========================== --
+
+
 
 -- == The Value Functor ==
 data ValueF x = ValueF Int
@@ -175,23 +218,36 @@ tag = match
 pattern Tag s x <- ((^? tag) -> Just (TaggedF s x)) where
   Tag s x = tag # TaggedF s x
 
--- the natural transformation that tagges a functor.
-data TaggedN f x = TaggedN Metadata (f x)
-             deriving (Eq, Ord, Show, Functor)
+locate :: Elem TaggedF fs => Lang fs -> Metadata
+locate (Tag s _) = s
+locate ((^. parent) -> Just p) = locate p
+locate _ = "somewhere in the program"
 
-taggedN :: Iso' (TaggedN f x)  (f x)
-taggedN = iso (\(TaggedN _ x) -> x) (\x -> TaggedN "" x)
+propagateTag :: Elem TaggedF fs => Algebra TaggedF (Lang fs)
+propagateTag (TaggedF s x) = Tag s x
 
 -- == type synonyms and evaluation ==
 
+evArith :: (Elem ValueF gs, Elem TupleF gs, Elem TaggedF gs) => Algebra ArithF (Lang gs)
+evArith (Imm n)    = Value n
+evArith (Add a b)  = evBinOp (+) a b
+evArith (Mul a b)  = evBinOp (*) a b
+
+evBinOp :: (Elem ValueF gs, Elem TupleF gs, Elem TaggedF gs) => (Int -> Int -> Int) -> Lang gs -> Lang gs -> Lang gs
+evBinOp op a b = error $ "cannot operate: " ++ locate a ++ locate b
+
 type TaggedExpr = Lang [TaggedF, ArithF, TupleF]
+type TaggedValue = Lang [TaggedF, ValueF, TupleF]
+
 expr1 :: TaggedExpr
 expr1 = Tag "1:0" $ Tuple [Imm 23 `Add` Imm 21, Imm 4]
 
+eval :: TaggedExpr -> TaggedValue
+eval = fold $ propagateTag +:: (evArith +:: transAlg)
 
 main :: IO ()
 main = do
-  print expr1
+  print $ eval expr1
 
 {-
 TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
