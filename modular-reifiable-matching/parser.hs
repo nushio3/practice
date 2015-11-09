@@ -214,7 +214,12 @@ pattern Value n <- ((^? value) -> Just (ValueF n)) where
 
 -- == The Tuple Functor ==
 data TupleF x = TupleF [x]
-             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+             deriving (Eq, Ord, Functor, Foldable, Traversable)
+instance Show x => Show (TupleF x) where
+  show (TupleF xs) = let c '[' = '('
+                         c ']' = ')'
+                         c x   = x
+                     in map c $ show xs
 tuple :: MatchPrism TupleF
 tuple = match
 
@@ -325,7 +330,20 @@ parseTerm :: P.Parser Expr
 parseTerm = parseTuple <|> parseImm
 
 main :: IO ()
-main = do
+main = forever $ do
+  str <- getLine
+  let res = P.parseString parseExpr (P.Columns 0 0) str
+  case res of
+    P.Failure doc -> do
+      Ppr.displayIO stdout $ Ppr.renderPretty 0.8 80 $ doc <> Ppr.linebreak
+    P.Success expr -> do
+      print expr
+      case eval expr of
+        Right r -> putStrLn $ " -> " ++ show r
+        Left doc -> Ppr.displayIO stdout $ Ppr.renderPretty 0.8 80 $ doc <> Ppr.linebreak
+
+main2 :: IO ()
+main2 = do
   Just exprs <- P.parseFromFile (many parseExpr) "input.txt"
   forM_  exprs $ \expr -> do
     print expr
