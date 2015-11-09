@@ -18,18 +18,22 @@ Tested on stack lts-3.11
 import Control.Applicative
 import Control.Lens
 import Control.Monad
+import Data.Monoid hiding (Sum)
+import qualified Data.Set as S
 import Data.Traversable
 import qualified Text.Trifecta as P hiding (string)
 import qualified Text.Parser.Expression as P
-
+import qualified Text.PrettyPrint.ANSI.Leijen as Ppr hiding (line, (<>), (<$>), empty, integer)
+import System.IO
 
 -- The fix point of F-algebra, with parent search
 data Fix f where
   In :: Functor f => {_metadata :: Maybe Metadata, _out :: f (Fix f)} -> Fix f
 
 instance (Show (f (Fix f))) => Show (Fix f) where
-  showsPrec n (In Nothing x)  = showsPrec n x
-  showsPrec n (In (Just t) x) = showsPrec n (x,t)
+--  showsPrec n (In Nothing x)  = showsPrec n x
+--  showsPrec n (In (Just t) x) = showsPrec n (x,t)
+    showsPrec n (In _ x) = showsPrec n x
 
 metadata :: Functor f => Lens' (Fix f) (Maybe Metadata)
 metadata fun (In p o) = fmap (\p' -> In p' o) (fun p)
@@ -197,7 +201,10 @@ infixr 5 +::, >::
 
 -- == The Value Functor ==
 data ValueF x = ValueF Int
-             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+             deriving (Eq, Ord, Functor, Foldable, Traversable)
+instance Show (ValueF x) where
+  showsPrec p (ValueF n) = showsPrec p n
+
 value :: MatchPrism ValueF
 value = match
 -- smart patterns
@@ -229,30 +236,13 @@ pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
 
 
 -- == The Compiler Metadata Functor ==
-type Metadata = String
-data TaggedF x = TaggedF Metadata x
-             deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
-tag :: MatchPrism TaggedF
-tag = match
--- smart patterns
-pattern Tag s x <- ((^? tag) -> Just (TaggedF s x)) where
-  Tag s x = tag # TaggedF s x
-
-locate :: Elem TaggedF fs => Lang fs -> Metadata
-locate ((^. metadata) -> Just p) = p
-locate _ = "somewhere in the program"
-
-propagateTag :: Elem TaggedF fs => Algebra TaggedF (Lang fs)
-propagateTag (TaggedF s x) = Tag s (infect x)
-  where
-    infect y@(In (Just _) x) = y
-    infect (In Nothing x) = In (Just s) (fmap infect x)
-
-
+data Metadata = Metadata {_metadataRendering :: P.Rendering}
+instance Show Metadata where
+  show = const ""
 
 -- == compiler monad == --
 
-type M = Either String
+type M = Either Ppr.Doc
 
 -- == type synonyms and evaluation ==
 
@@ -265,7 +255,13 @@ evBinOp :: (Int -> Int -> Int) -> NF -> NF -> M NF
 evBinOp op a b = case (a,b) of
    (Tuple xs, Tuple ys) | length xs == length ys ->
                                 Tuple <$> zipWithM (evBinOp op) xs ys
-   (Tuple _, Tuple _) -> Left "tuple length mismatch"
+   (Tuple _, Tuple _) -> Left $
+                         let Just (Metadata ma) = a ^. metadata
+                             Just (Metadata mb) = b ^. metadata
+                         in
+                           P.explain (P.addCaret (mb ^. P.renderingDelta) $ P.addCaret (ma ^. P.renderingDelta) ma) $
+                           P.Err (Just $ Ppr.text "tuple length mismatch") [] (S.empty)
+
    (Value x, ys) -> eval1 (op x) ys
    (xs, Value y) -> eval1 (flip op y) xs
    (Value x, Value y) -> return $  Value (op x y)
@@ -288,6 +284,13 @@ eval = mfold $ evArith +:: mTransAlg
 -- == Parser ==
 
 -- parsers
+withMeta :: P.Parser (Lang f) -> P.Parser (Lang f)
+withMeta p = do
+  r <- P.rend
+  x <- p
+  return $ x & metadata .~ (Just $ Metadata r)
+
+
 parseImm :: (Elem ArithF gs) => P.Parser (Lang gs)
 parseImm = do
   i <- P.integer
@@ -302,7 +305,7 @@ parseExpr = P.buildExpressionParser tbl parseTerm
     binary name fun assoc = P.Infix (fun <$ P.symbol name) assoc
 
 parseTuple :: P.Parser Expr
-parseTuple = do
+parseTuple = withMeta $ do
   _ <- P.symbol "("
   xs <- P.sepBy parseExpr (P.symbol ",")
   _ <- P.symbol ")"
@@ -318,4 +321,6 @@ main = do
   Just exprs <- P.parseFromFile (many parseExpr) "input.txt"
   forM_  exprs $ \expr -> do
     print expr
-    print $ eval expr
+    case eval expr of
+      Right r -> putStrLn $ " -> " ++ show r
+      Left doc -> Ppr.displayIO stdout $ Ppr.renderPretty 0.8 80 $ doc <> Ppr.linebreak
