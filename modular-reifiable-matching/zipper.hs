@@ -115,22 +115,22 @@ fold k (In x) = k $ fmap (fold k) x
 -- a retarded zipper
 data Zipper f a = Zipper {_zipperHistory :: Metadata, _zipperHead :: f a}
 
-type Algebra f a b = f a -> b
-type ZAlgebra f a b = Zipper f a -> b
+type ZAlgebrogen f a b = Zipper f a -> b
+type ZAlgebra f a = Zipper f a -> a
 
-(+::) :: ZAlgebra f a b -> ZAlgebra (Sum fs) a b -> ZAlgebra (Sum (f ': fs)) a b
+(+::) :: ZAlgebrogen f a b -> ZAlgebrogen (Sum fs) a b -> ZAlgebrogen (Sum (f ': fs)) a b
 af +:: afs = affs
   where
     affs (Zipper h (Here x))  = af  (Zipper h x)
     affs (Zipper h (There x)) = afs (Zipper h x)
 
-(>::) :: Elem f fs => ZAlgebra f a b -> ZAlgebra (Sum fs) a b -> ZAlgebra (Sum fs) a b
+(>::) :: Elem f fs => ZAlgebrogen f a b -> ZAlgebrogen (Sum fs) a b -> ZAlgebrogen (Sum fs) a b
 (>::) af afs (Zipper h x) = affs x
   where
     affs ((^? constructor) -> Just fa) = af  (Zipper h fa)
     affs x                             = afs (Zipper h x)
 
-zfold :: Elem TaggedF fs => ZAlgebra (Sum fs) a a -> Fix (Sum fs) -> a
+zfold :: Elem TaggedF fs => ZAlgebra (Sum fs) a -> Fix (Sum fs) -> a
 zfold k x = go k "" x
   where
     go k hist (Tag s x) = k $ Zipper hist (fmap (go k s) (out x))
@@ -190,24 +190,25 @@ pattern Tag s x <- ((^? tag) -> Just (TaggedF s x)) where
 location :: Elem TaggedF fs => Zipper (Sum fs) x -> Metadata
 location (Zipper h _) = h
 
-propagateTag :: ZAlgebra fs a (Lang gs) ->  ZAlgebra (TaggedF ': fs) a (Lang (TaggedF ': gs))
-propagateTag = undefined
-
+propagateTag :: Elem TaggedF gs => ZAlgebra TaggedF (Lang gs)
+propagateTag (Zipper _ (TaggedF s x)) = Tag s x
 
 
 -- == type synonyms and evaluation ==
 type Expr = Lang [ArithF, TupleF]
 type TV   = Lang [ValueF, TupleF]
 
-eval :: Expr -> TV
-eval (Imm n)    = Value n
-eval (Add a b)  = evalBin (+) (eval a) (eval b)
-eval (Mul a b)  = evalBin (*) (eval a) (eval b)
+evalArith :: Elem ValueF gs => ZAlgebra ArithF (Lang gs)
+evalArith (Imm n)    = Value n
+evalArith (Add a b)  = evalBin (+) a b
+evalArith (Mul a b)  = evalBin (*) a b
+
 eval (Tuple xs) = Tuple $ map eval xs
 
-evalBin :: (Int -> Int -> Int) -> TV -> TV -> TV
+evalBin :: (Elem ValueF gs, Elem TupleF gs) => (Int -> Int -> Int) -> Lang gs -> Lang gs -> Lang gs
 evalBin  op a1 b1 =
   case (a1,b1) of
+  -- Oh, we cannot access zipper from here!!
    (Tuple xs, Tuple ys) | length xs == length ys ->
                                  Tuple (zipWith (evalBin op) xs ys)
    (Tuple _, Tuple _) -> error "tuple length mismatch"
@@ -236,10 +237,7 @@ expr3 = Tuple [Imm 23, Imm 21, Imm 4, Imm 4]
 
 main :: IO ()
 main = do
-  print expr1
-  print $ eval $ Mul (Imm 100) expr1
-  print $ subOp eval $ expr2
-  print $ eval $ Mul expr1 expr3
+  print "hi"
 
 {-
 TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
