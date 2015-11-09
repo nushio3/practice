@@ -15,12 +15,12 @@ see also: composable algebra by Bruno & Boya http://emmabypeng.github.io/files/F
 Tested on stack lts-3.11
 -}
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad
 import Data.Traversable
-import qualified Text.Trifecta as P
-import qualified Text.Parser.Expression as X
-
+import qualified Text.Trifecta as P hiding (string)
+import qualified Text.Parser.Expression as P
 
 
 -- The fix point of F-algebra, with parent search
@@ -203,12 +203,12 @@ pattern Value n <- ((^? value) -> Just (ValueF n)) where
 -- == The Tuple Functor ==
 data TupleF x = TupleF [x]
              deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
-tree :: MatchPrism TupleF
-tree = match
+tuple :: MatchPrism TupleF
+tuple = match
 
 -- smart patterns
-pattern Tuple xs <- ((^? tree) -> Just (TupleF xs)) where
-  Tuple xs = tree # TupleF xs
+pattern Tuple xs <- ((^? tuple) -> Just (TupleF xs)) where
+  Tuple xs = tuple # TupleF xs
 
 -- == The Arithmetic Functor ==
 data ArithF x = ImmF Int | AddF x x | MulF x x
@@ -222,6 +222,7 @@ pattern Add a b <- ((^? arith) -> Just (AddF a b)) where
   Add a b = arith # AddF a b
 pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
   Mul a b = arith # MulF a b
+
 
 -- == The Compiler Metadata Functor ==
 type Metadata = String
@@ -243,30 +244,59 @@ propagateTag (TaggedF s x) = Tag s (infect x)
     infect y@(In (Just _) x) = y
     infect (In Nothing x) = In (Just s) (fmap infect x)
 
+
+
 -- == type synonyms and evaluation ==
 
-evArith :: (Elem ValueF gs, Elem TupleF gs, Elem TaggedF gs) => Algebra ArithF (Lang gs)
+evArith :: (Elem ValueF gs, Elem TupleF gs) => Algebra ArithF (Lang gs)
 evArith (Imm n)    = Value n
 evArith (Add a b)  = evBinOp (+) a b
 evArith (Mul a b)  = evBinOp (*) a b
 
-evBinOp :: (Elem ValueF gs, Elem TupleF gs, Elem TaggedF gs) => (Int -> Int -> Int) -> Lang gs -> Lang gs -> Lang gs
-evBinOp op a b = error $ "cannot operate: " ++ locate a ++ locate b
+evBinOp :: (Elem ValueF gs, Elem TupleF gs) => (Int -> Int -> Int) -> Lang gs -> Lang gs -> Lang gs
+evBinOp op a b = error $ "cannot operate: "
 
-type TaggedExpr = Lang [ArithF,TaggedF, TupleF]
-type TaggedValue = Lang [TaggedF, ValueF, TupleF]
+type Expr = Lang [ArithF,TupleF]
+type NF = Lang [ ValueF, TupleF]
 
-expr1 :: TaggedExpr
-expr1 = propagateTag $ Tag "1:0" $ Tuple [Imm 23 `Add` Imm 21, Imm 4]
+expr1 :: Expr
+expr1 = Tuple [Imm 23 `Add` Imm 21, Imm 4]
 
-eval :: TaggedExpr -> TaggedValue
+eval :: Expr -> NF
 eval = fold $ evArith +:: transAlg
+
+-- == Parser ==
+
+-- parsers
+parseImm :: (Elem ArithF gs) => P.Parser (Lang gs)
+parseImm = do
+  i <- P.integer
+  return $ Imm $ fromInteger i
+
+parseExpr :: P.Parser Expr
+parseExpr = P.buildExpressionParser tbl parseTerm
+  where
+    tbl = [[binary "*" Mul P.AssocLeft],
+           [binary "+" Add P.AssocLeft]
+           ]
+    binary name fun assoc = P.Infix (fun <$ P.symbol name) assoc
+
+parseTuple :: P.Parser Expr
+parseTuple = do
+  _ <- P.symbol "("
+  xs <- P.sepBy parseExpr (P.symbol ",")
+  _ <- P.symbol ")"
+  case xs of
+   [x] -> return x
+   _ -> return $ Tuple xs
+
+parseTerm :: P.Parser Expr
+parseTerm = parseTuple <|> parseImm
 
 main :: IO ()
 main = do
-  print $ expr1
-  print $ eval expr1
-
+  Just exprs <- P.parseFromFile (parseExpr `P.sepBy` P.newline) "input.txt"
+  mapM_ print exprs
 {-
 TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
 TupleF [ValueF 4400,ValueF 400,ValueF 12300]
