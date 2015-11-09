@@ -45,12 +45,12 @@ _There = let a :: Sum (f ': fs) x -> Maybe (Sum fs x)
 
 -- The constraint that functor f is an element of a functor set fs
 class Elem f fs where
-  match :: Prism' (Sum fs x) (f x)
+  constructor :: Prism' (Sum fs x) (f x)
 
 instance {-# OVERLAPPING #-} Functor f => Elem f (f ': fs) where
-  match = _Here
+  constructor = _Here
 instance {-# OVERLAPPABLE #-} (Functor f, Functor g, Elem f fs) => Elem f (g ': fs) where
-  match = _There . match
+  constructor = _There . constructor
 
 -- The constraint that set of functors fs is a subset of gs
 class Subset fs gs where
@@ -64,20 +64,37 @@ instance {-# OVERLAPPING #-} Subset '[] fs => Subset '[] (f ': fs) where
 
 instance {-# OVERLAPPABLE #-} (Functor f, Elem f gs, Subset fs gs) => Subset (f ': fs) gs where
   subrep = let fwd :: Sum (f ': fs) x -> Sum gs x
-               fwd (Here x)  = review match x
+               fwd (Here x)  = review constructor x
                fwd (There x) = review subrep x
 
                bwd :: Sum gs x -> Maybe (Sum (f ': fs) x)
-               bwd ((^? match ) -> Just x) = Just (Here x)
+               bwd ((^? constructor ) -> Just x) = Just (Here x)
                bwd ((^? subrep) -> Just x) = Just (There x)
                bwd _                     = Nothing
            in prism' fwd bwd
+
+-- The constraint that object x can somehow be matched to functor f
+class Matches f x where
+  type Content f x :: *
+  match :: Prism' x (f (Content f x))
+
+instance Elem f fs => Matches f (Sum fs x) where
+  type Content f (Sum fs x) = x
+  match = constructor
+
+instance Elem f fs => Matches f (Fix (Sum fs)) where
+  type Content f (Fix (Sum fs)) = Fix (Sum fs)
+  match = fix . constructor
+
+instance Elem f fs => Matches f (Zipper (Sum fs) x) where
+  type Content f (Zipper (Sum fs) x) = x
+  match = prism' (\x -> Zipper [] x) (Just . _zipperHead) . constructor
 
 -- emulate some mrm
 type MRM_Matches fs a b = Sum fs a -> b
 
 extractAt :: Elem f fs => (MRM_Matches fs a b) -> (f a -> b)
-extractAt sfun fa = sfun $ (review match) fa
+extractAt sfun fa = sfun $ (review constructor) fa
 
 -- The fix point
 data Fix f where
@@ -90,15 +107,34 @@ fix = iso out In
 
 -- We create languages by folding over set of functors
 type Lang (fs :: [ * -> * ]) = Fix (Sum fs)
-type LangPrism (f :: * -> *) = forall f fs . Elem f fs => Prism' (Lang fs) (f (Lang fs))
+type MatchPrism (f :: * -> *) = forall f x . Matches f x => Prism' x (f (Content f x))
 
 fold :: (Sum fs a -> a) -> Lang fs -> a
 fold k (In x) = k $ fmap (fold k) x
 
-zfold :: Functor f => ([Fix f] -> f a -> a) -> Fix f -> a
-zfold k x = go k [x] x
+-- a retarded zipper
+data Zipper f a = Zipper {_zipperHistory :: Metadata, _zipperHead :: f a}
+
+type Algebra f a b = f a -> b
+type ZAlgebra f a b = Zipper f a -> b
+
+(+::) :: ZAlgebra f a b -> ZAlgebra (Sum fs) a b -> ZAlgebra (Sum (f ': fs)) a b
+af +:: afs = affs
   where
-    go k fixes x = k fixes $ fmap (go k (x:fixes)) (out x)
+    affs (Zipper h (Here x))  = af  (Zipper h x)
+    affs (Zipper h (There x)) = afs (Zipper h x)
+
+(>::) :: Elem f fs => ZAlgebra f a b -> ZAlgebra (Sum fs) a b -> ZAlgebra (Sum fs) a b
+(>::) af afs (Zipper h x) = affs x
+  where
+    affs ((^? constructor) -> Just fa) = af  (Zipper h fa)
+    affs x                             = afs (Zipper h x)
+
+zfold :: Elem TaggedF fs => ZAlgebra (Sum fs) a a -> Fix (Sum fs) -> a
+zfold k x = go k "" x
+  where
+    go k hist (Tag s x) = k $ Zipper hist (fmap (go k s) (out x))
+    go k hist x         = k $ Zipper hist (fmap (go k hist) (out x))
 
 subFix :: (Subset fs gs) => Lang fs -> Lang gs
 subFix = fold (In . review subrep)
@@ -111,8 +147,8 @@ subOp g = g . subFix
 -- == The Value Functor ==
 data ValueF x = ValueF Int
              deriving (Eq, Ord, Show, Functor)
-value :: LangPrism ValueF
-value = fix . match
+value :: MatchPrism ValueF
+value = match
 -- smart patterns
 pattern Value n <- ((^? value) -> Just (ValueF n)) where
   Value n = value # ValueF n
@@ -120,8 +156,8 @@ pattern Value n <- ((^? value) -> Just (ValueF n)) where
 -- == The Tuple Functor ==
 data TupleF x = TupleF [x]
              deriving (Eq, Ord, Show, Functor)
-tree :: LangPrism TupleF
-tree = fix . match
+tree :: MatchPrism TupleF
+tree = match
 
 -- smart patterns
 pattern Tuple xs <- ((^? tree) -> Just (TupleF xs)) where
@@ -130,8 +166,8 @@ pattern Tuple xs <- ((^? tree) -> Just (TupleF xs)) where
 -- == The Arithmetic Functor ==
 data ArithF x = ImmF Int | AddF x x | MulF x x
              deriving (Eq, Ord, Show, Functor)
-arith :: LangPrism ArithF
-arith = fix . match
+arith :: MatchPrism ArithF
+arith = match
 -- smart patterns
 pattern Imm n <- ((^? arith) -> Just (ImmF n)) where
   Imm n = arith # ImmF n
@@ -139,6 +175,25 @@ pattern Add a b <- ((^? arith) -> Just (AddF a b)) where
   Add a b = arith # AddF a b
 pattern Mul a b <- ((^? arith) -> Just (MulF a b)) where
   Mul a b = arith # MulF a b
+
+-- == The Compiler Metadata Functor ==
+type Metadata = String
+data TaggedF x = TaggedF Metadata x
+             deriving (Eq, Ord, Show, Functor)
+tag :: MatchPrism TaggedF
+tag = match
+-- smart patterns
+pattern Tag s x <- ((^? tag) -> Just (TaggedF s x)) where
+  Tag s x = tag # TaggedF s x
+
+-- Find tag from history of the zipper
+location :: Elem TaggedF fs => Zipper (Sum fs) x -> Metadata
+location (Zipper h _) = h
+
+propagateTag :: ZAlgebra fs a (Lang gs) ->  ZAlgebra (TaggedF ': fs) a (Lang (TaggedF ': gs))
+propagateTag = undefined
+
+
 
 -- == type synonyms and evaluation ==
 type Expr = Lang [ArithF, TupleF]
@@ -175,11 +230,16 @@ expr1 = Tuple [Imm 23 `Add` Imm 21, Imm 4, subFix expr2]
 expr2 :: Lang '[ ArithF ]
 expr2 = Mul (Imm 3) (Imm 41)
 
+expr3 :: Expr
+expr3 = Tuple [Imm 23, Imm 21, Imm 4, Imm 4]
+
+
 main :: IO ()
 main = do
   print expr1
   print $ eval $ Mul (Imm 100) expr1
   print $ subOp eval $ expr2
+  print $ eval $ Mul expr1 expr3
 
 {-
 TupleF [AddF (ImmF 23) (ImmF 21),ImmF 4,MulF (ImmF 3) (ImmF 41)]
