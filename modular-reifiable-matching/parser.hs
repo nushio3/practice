@@ -25,7 +25,9 @@ import qualified Text.Trifecta as P hiding (string)
 import qualified Text.Trifecta.Delta as P
 import qualified Text.Parser.Expression as P
 import qualified Text.PrettyPrint.ANSI.Leijen as Ppr hiding (line, (<>), (<$>), empty, integer)
+import System.Environment
 import System.IO
+
 
 -- The fix point of F-algebra, with parent search
 data Fix f where
@@ -151,8 +153,14 @@ foldout :: Algebra f a -> Fix f -> a
 foldout k (In _ x) = k $ fmap (foldout k) x
 
 fold :: Algebra f (Lang g) -> Fix f -> (Lang g)
-fold k (In meta x) = (k $ fmap (fold k) x) & metadata .~ meta
+fold k (In meta x) = propagateMetadata meta $ k $ fmap (fold k) x
 
+propagateMetadata :: Maybe Metadata -> Lang f -> Lang f
+propagateMetadata Nothing x = x
+propagateMetadata (Just meta) x = go x
+  where
+    go (In Nothing y) = In (Just meta) $ fmap go y
+    go y = y
 
 mlift :: (Monad m, Traversable fs) => Algebrogen fs a b -> Algebrogen fs (m a) (m b)
 mlift fsa2b fsma = liftM fsa2b $ sequence fsma
@@ -161,7 +169,7 @@ mfold :: (Monad m, Traversable f) => AlgebraM m f (Lang g) -> Fix f -> m (Lang g
 mfold k (In meta x) = do
   r1 <- traverse (mfold k) x
   r2 <- k r1
-  return $ r2 & metadata .~ meta
+  return $ propagateMetadata meta r2
 
 mfoldout :: Monad m => (Sum fs a -> m a) -> Lang fs -> m a
 mfoldout k x = foldout (join . mlift k) x
@@ -185,6 +193,7 @@ af +:: afs = affs
     affs (Here x)  = af  x
     affs (There x) = afs x
 
+-- | Override algebra for given functor.
 (>::) :: Elem f fs => Algebra f a -> Algebra (Sum fs) a -> Algebra (Sum fs) a
 af >:: afs= affs
   where
@@ -330,7 +339,13 @@ parseTerm :: P.Parser Expr
 parseTerm = parseTuple <|> parseImm
 
 main :: IO ()
-main = forever $ do
+main = do
+  argv <- getArgs
+  if "-i" `elem` argv then main1
+    else main2
+
+main1 :: IO ()
+main1 = forever $ do
   str <- getLine
   let res = P.parseString parseExpr (P.Columns 0 0) str
   case res of
