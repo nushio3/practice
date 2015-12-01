@@ -15,7 +15,7 @@ class Pattern
     elsif @alternative
       return @alternative.match(x)
     else
-      return nil
+      raise("unexpected constructor: " + x.constructor.to_s)
     end
   end
   def | (other)
@@ -35,6 +35,22 @@ def Binop(*argv, &block)
   else # used as constructor
     ret = ADT.new()
     ret.constructor = :binop
+    ret.argv = argv
+    return ret
+  end
+end
+
+def Uniop(*argv, &block)
+  if(block) # used as pattern
+    ret = Pattern.new()
+    ret.accept_continuation = block
+    def ret.===(x)
+      return x.constructor == :uniop && String === x.argv[0]
+    end
+    return ret
+  else # used as constructor
+    ret = ADT.new()
+    ret.constructor = :uniop
     ret.argv = argv
     return ret
   end
@@ -66,7 +82,7 @@ def evArith(expr)
     when '*'
       evArith(x) * evArith(y)
     else
-      p "error: unknown operator " + op + " at position " + expr.metadata
+      raise( "error: unknown operator " + op + " at position " + expr.metadata)
     end
   }
 end
@@ -78,6 +94,9 @@ badExpr = Binop('>>', Imm(1), Imm(2))
 badExpr.metadata = '77:17'
 
 
+# you may also use throw/catch
 p evArith(expr)
 
-p evArith(Binop('+', expr, badExpr))
+p evArith(Uniop('-',expr))
+
+# p evArith(Binop('+', expr, badExpr))
