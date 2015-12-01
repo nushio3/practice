@@ -94,6 +94,7 @@ arith = match
 
 arith' :: MatchesF ArithF x s => Prism' s (ArithF x)
 arith' = match
+pattern Imm' :: Int -> s
 pattern Imm' n <- ((^? arith') -> Just (ImmF n)) where
   Imm' n = arith' # ImmF n
 
