@@ -1,0 +1,66 @@
+\documentclass[t,cjk]{beamer}
+\usepackage{luatexja}
+\usepackage{amsmath}
+\usepackage{natbib}
+\def\newblock{} %% For beamer and natbib to coexist
+\setbeamertemplate{navigation symbols}{} % remove beamer navigation symbols
+\usetheme{CambridgeUS}         %% theme
+\usefonttheme{professionalfonts}       %% 数式の文字を通常の LaTeX と同じにする
+\setbeamercovered{transparent}         %% 消えている文字をうっすらと表示する
+\usepackage{concmath} %% プロジェクターでも読みやすい太めのフォント。 texlive-math-extraに入っている
+
+
+\bibliographystyle{apj}
+
+
+\begin{document}
+\title[Short title]{Solar Flare Forecast by Deep Learning}
+\author[T. Muranushi]{Takayuki Muranushi}            %% ここに書かれた情報は色々なところに使われるので
+\institute[RIKEN AICS]{RIKEN Advanced Institute for Computational Science}
+\date{Nov 25, 2015}
+
+\begin{frame}                  %% \begin{frame}..\end{frame} で 1 枚のスライド
+  \titlepage                     %% タイトルページ
+  \begin{center}
+    for seminar/meeting
+  \end{center}
+\end{frame}
+
+\begin{frame}                  %% 目次 (必要なければ省略)
+\tableofcontents
+\end{frame}
+
+\section{Our mission in space weather forecast}
+
+
+\frame{
+  \frametitle{Accepted for publication in Space Weather!}
+}
+
+
+
+
+\frame{  \frametitle{Introduction}
+  \begin{align}
+    a &=b+c_d\phi
+  \end{align}
+
+  Space weather is important, and space weather forcast using
+  statistical methods has been practiced e.g. by
+  \citet{song2009statistical},
+  \citet{bloomfield2012toward},\citet{2013SoPh..283..157A},
+  \citet{bobra2014solar}, and \citet{muranushi2015ufcorin}
+
+}
+
+
+
+\appendix
+
+\section{Bibliography}
+\frame[allowframebreaks]{
+  \frametitle{Bibliography}
+  \bibliography{reference.bib}
+}
+
+\end{document}
