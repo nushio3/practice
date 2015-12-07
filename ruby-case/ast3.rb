@@ -29,7 +29,8 @@ def Binop(*argv, &block)
     ret = Pattern.new()
     ret.accept_continuation = block
     def ret.===(x)
-      return x.constructor == :binop && String === x.argv[0]
+      return x.constructor == :binop && String === x.argv[0]&&
+             ADT === x.argv[1] && ADT === x.argv[2]
     end
     return ret
   else # used as constructor
@@ -45,7 +46,8 @@ def Uniop(*argv, &block)
     ret = Pattern.new()
     ret.accept_continuation = block
     def ret.===(x)
-      return x.constructor == :uniop && String === x.argv[0]
+      return x.constructor == :uniop && String === x.argv[0] &&
+             ADT === x.argv[1]
     end
     return ret
   else # used as constructor
@@ -94,9 +96,6 @@ badExpr = Binop('>>', Imm(1), Imm(2))
 badExpr.metadata = '77:17'
 
 
-# you may also use throw/catch
 p evArith(expr)
 
 p evArith(Uniop('-',expr))
-
-# p evArith(Binop('+', expr, badExpr))
