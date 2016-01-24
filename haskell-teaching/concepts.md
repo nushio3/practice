@@ -62,4 +62,10 @@ Applicative
 
 Monad
 
+Maybeモナド
+
+Listモナド
+
+
+
 https://wiki.haskell.org/Typeclassopedia#Functor
