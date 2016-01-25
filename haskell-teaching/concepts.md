@@ -66,6 +66,9 @@ Maybeモナド
 
 Listモナド
 
+Stateモナド
+
+トランスフォーマー
 
 
 https://wiki.haskell.org/Typeclassopedia#Functor
