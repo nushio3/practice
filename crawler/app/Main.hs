@@ -8,6 +8,9 @@ import Lib
 getURL :: String -> IO String
 getURL url = do
   resp <- simpleHTTP $ getRequest url
+  case resp of
+    Left err -> return ""
+    Rigt
   getResponseBody resp
 
 main :: IO ()
