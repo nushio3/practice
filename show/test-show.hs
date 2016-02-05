@@ -5,12 +5,21 @@ in Section 11.4 of Haskell 2010 : https://www.haskell.org/onlinereport/haskell20
 > (x,"") is an element of (readsPrec d (showsPrec d x ""))
 
 -}
+data Y = Д星 String  String  deriving (Eq, Ord, Show, Read)
 
-data X =  String :☆ String  deriving (Eq, Ord, Show, Read)
+data X = String :++ String  deriving (Eq, Ord, Show, Read)
+
 
 main :: IO ()
 main = do
-  let x = "" :☆ ""
+  let y = Д星 "" ""
+      d = 0
+  print $ map fromEnum $ show y
+  print $ (y, "") `elem` (readsPrec d (showsPrec d y ""))
+  print $ (read $ show y :: Y)
+
+  let x = "" :++ ""
       d = 0
   print $ map fromEnum $ show x
   print $ (x, "") `elem` (readsPrec d (showsPrec d x ""))
+  print $ (read $ show x :: X)
