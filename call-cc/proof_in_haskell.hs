@@ -2,6 +2,8 @@
 
 data Bot
 
+
+
 type Not a = a -> Bot
 type a ∧ b = (a,b)
 type a ∨ b = Either a b
