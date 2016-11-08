@@ -39,16 +39,7 @@ model = MLP(784, 10)
 # load the model from the saved learning
 serializers.load_npz('mnist.model', model)
 
-
-train, test = datasets.get_mnist()
-for t in test[0:10]:
-    img_data, label = t
-    x = Variable(img_data.reshape((1,784)))
-
-    the_y = model(x)
-    print label, MLP_response_to_label(the_y.data)
-
-
+# load the given image
 img = ndimage.imread(sys.argv[1],flatten=True)
 img = ((255 - img)/255.0).astype(np.float32)
 the_img = img.reshape((1,784))
@@ -56,4 +47,5 @@ the_img = img.reshape((1,784))
 x = Variable(the_img)
 
 the_y = model(x)
+print the_y.data
 print "The given image is ", MLP_response_to_label(the_y.data)
