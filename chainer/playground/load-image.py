@@ -4,7 +4,7 @@ import numpy as np
 import math
 import scipy.ndimage as ndimage
 
-img = ndimage.imread("five.png",flatten=True)
+img = ndimage.imread("eight.png",flatten=True)
 img = ((255 - img)/255.0).astype(np.float32)
 
 img = img.reshape((784,))
