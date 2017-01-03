@@ -1,0 +1,50 @@
+* TODO Go to conference JpGU 2016
+
+** TODO Abstract
+   DEADLINE: <2017-02-16 木>
+
+
+* TODO Go to conference AOGS2017
+
+- http://www.asiaoceania.org/aogs2017/public.asp?page=home.htm
+
+<2017-08-06 日> - <2017-08-11 金>
+
+| Item               | Open            | Deadline        |
+| Hotels open        | <2017-01-01 日> |                 |
+| Abstract           |                 | <2017-02-15 水> |
+| Payment            |                 | <2017-05-24 水> |
+| Early Registration |                 | <2017-05-24 水> |
+| Airline            |                 |                 |
+
+
+* TODO Go to ICFP 2017
+
+<2017-09-03 日> - <2017-09-09 土>
+
+Do I need to go ICFP this year?
+
+** TODO ICFP Research paper deadline
+   DEADLINE: <2017-02-27 月>
+
+
+
+
+* TODO Go to conference AGU2017
+
+Details not yet disclosed
+
+http://fallmeeting.agu.org/2016/2017-fall-meeting-new-orleans/
+
+
+
+* TODO Establish an AIA Microflare Feature [1/4]                    :hadaphd:
+  DEADLINE: <2017-01-30 月>
+
+** DONE Determine a threshold value in AIA94 that can be considered a micro- and nano-flareing region
+   CLOSED: [2017-01-03 火 17:15]
+   - State "DONE"       from "TODO"       [2017-01-03 火 17:15]
+** TODO Count the number of events that are considered as flares
+** TODO Make a history of events with their size
+
+** TODO Draw a scattered graph between the past events and events in the future, small events v.s. large events, etc.
