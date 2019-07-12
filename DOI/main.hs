@@ -6,7 +6,7 @@ import System.IO
 
 doi2BibTeX :: String -> IO String
 doi2BibTeX doi = do
-  let cmd =  "curl -LH 'Accept: text/bibliography; style=bibtex' http://dx.doi.org/" ++ doi
+  let cmd =  "curl -LH 'Accept: text/bibliography; style=bibtex' https://doi.org/" ++ doi
   hPutStrLn stderr cmd
   (_,fp,_,_) <- runInteractiveCommand cmd
   hGetContents fp

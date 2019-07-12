@@ -14,7 +14,7 @@ doi2BibTeX doi = do
       opts = [ CurlFollowLocation True
              , CurlHttpHeaders ["Accept: text/bibliography; style=bibtex"]
              ]
-      url = "http://dx.doi.org/" ++ doi
+      url = "https://doi.org/" ++ doi
   res <- openURIWithOpts opts url
   case res of
     Right bs -> return bs
